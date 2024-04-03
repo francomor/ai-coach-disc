@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+#  stack:
+#    image: redis/redis-stack-server:latest
+#    container_name: stack
+#    ports:
+#      - "6379:6379"
+#    healthcheck:
+#      test: redis-cli ping
+#      interval: 2s
+#      timeout: 30s
+#      retries: 5
+#      start_period: 2s
+#    volumes:
+#      - redis-data:/data
+
+  api:
+    build: api
+    command: ["flask", "run", "--host=0.0.0.0"]
+#    depends_on:
+#      - stack
+    volumes:
+      - ./api:/backend
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+      - REDIS_HOST=cache
+      - REDIS_PORT=6379
+    env_file:
+      - .env
+    ports:
+      - "80:5000"
+
+volumes:
+  redis-data:
+    driver: local
+
+#
+#  frontend:
+#    build: frontend
+#    command: ["npm", "start"]
+#    volumes:
+#      - ./frontend:/frontend
+#      - node-modules:/frontend/node_modules
+#    environment:
+#      - NODE_ENV=development
+#    ports:
+#      - '3000:3000'
+#    depends_on:
+#      - api
+#
+#volumes:
+#  node-modules:
