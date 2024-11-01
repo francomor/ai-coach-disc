@@ -1,0 +1,11 @@
+[flake8]
+exclude =
+    .git
+    __pycache__
+    venv
+    .venv
+    .env
+extend-ignore = E203,E266,T101,E501
+
+[isort]
+profile = black

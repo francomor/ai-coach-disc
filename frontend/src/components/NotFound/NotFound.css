@@ -1,0 +1,22 @@
+.not-found {
+  padding: 8rem 0;
+  text-align: center;
+  background-color: black;
+  font-family:
+    Kumbh Sans,
+    serif;
+}
+
+.not-found-title {
+  font-size: 3rem;
+  margin-bottom: 2rem;
+  color: white;
+  margin-top: 1em;
+}
+
+.not-found-text {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: white;
+  margin-top: 1em;
+}

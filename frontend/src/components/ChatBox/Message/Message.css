@@ -1,0 +1,87 @@
+.message-container {
+  margin: 8px 0;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.message-participant-name {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.message {
+  font-size: 14px;
+}
+
+.user-message {
+  background-color: #2f9cd3;
+  color: #ffffff;
+  text-align: right;
+  margin-left: 40%;
+}
+
+.bot-message {
+  background-color: #f99a70;
+  text-align: left;
+  margin-right: 40%;
+}
+
+.info-message {
+  color: #303030;
+  text-align: center;
+  font-weight: 600;
+  margin-left: 35%;
+  margin-right: 35%;
+}
+
+.error-message {
+  background-color: #e05c5c;
+  color: #ececec;
+}
+
+@media (max-width: 650px) {
+  .message-container {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 370px) {
+  .user-message {
+    margin-left: 15%;
+  }
+  .bot-message {
+    margin-right: 15%;
+  }
+}
+
+@media (min-width: 370px) and (max-width: 850px) {
+  .user-message {
+    margin-left: 20%;
+  }
+  .bot-message {
+    margin-right: 20%;
+  }
+}
+
+@media (max-width: 500px) {
+  .info-message {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+@media (min-width: 500px) and (max-width: 900px) {
+  .info-message {
+    margin-left: 20%;
+    margin-right: 20%;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1200px) {
+  .info-message {
+    margin-left: 25%;
+    margin-right: 25%;
+  }
+}

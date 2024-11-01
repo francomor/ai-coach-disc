@@ -1,0 +1,8 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #F2F2F2;
+  font-family: Montserrat, sans-serif;;
+  flex: 1 0 auto;
+}

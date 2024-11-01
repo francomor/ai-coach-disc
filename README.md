@@ -1,33 +1,43 @@
 # AI Persona
-This is AI Persona by GUT.
+AI Persona is a multi-purpose AI chatbot platform designed to enhance user interactions. The project consists of a Flask-based backend and a React frontend.
 
-## How to use
-1. Install Python 3.6 or higher
-2. Install pip
-3. Install requirements
-```
-pip install -r requirements.txt
-```
-4. Run backend
-First you need to initialize the database:
+## Prerequisites
+* Python 3.6 or higher
+* Poetry
+* Node.js & npm
+* Pre-commit
 
-```
-from yourapplication import init_db
-init_db()
+## Installation
+To set up the project, run the following command:
+```bash
+make init
 ```
 
-Then you can run the application:
-```
-flask --app app run 
-```
-5. Run frontend
-```
-cd frontend
-npm install
-npm start
+## Usage
+To run the backend and frontend servers, follow the steps below.
+
+### Backend
+To start the Flask backend in development mode:
+```bash
+make backend
 ```
 
-6. Gunicorn
+### Frontend
+To start the React frontend:
+```bash
+make frontend
 ```
-gunicorn --config gunicorn_config.py app:app
+
+## Database Seeding
+If you need to seed the database with initial data, run
+
+```bash
+make seed-db
+```
+
+## Linting
+To run the tests and linters, execute the following command:
+```bash
+make pre-commit
+make prettier
 ```

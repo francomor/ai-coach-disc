@@ -1,0 +1,115 @@
+.chat-box-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  height: 70vh;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2f9cd3;
+  border-radius: 10px;
+}
+
+.chat-box-messages {
+  border: 1px solid #b0b0b0;
+  box-sizing: border-box;
+  flex-grow: 1;
+  overflow-y: scroll;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+}
+
+.chat-box-input {
+  display: flex;
+  margin-top: auto;
+  padding-top: 24px;
+  padding-bottom: 16px;
+}
+
+.chat-box-input input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #b0b0b0;
+  border-radius: 4px 0 0 4px;
+  font-size: 14px;
+  background-color: #f5f8fa;
+}
+
+.chat-box-input input::placeholder {
+  color: #303030;
+}
+
+.chat-box-input input:hover {
+  border-color: #1d1d1d;
+}
+
+.chat-box-input input:focus {
+  border-color: #007aff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.5);
+}
+
+.chat-box-input input.invalid {
+  border-color: #ff0000;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5);
+}
+
+.chat-box-input input:disabled {
+  background-color: #eae8e8;
+  color: #495057;
+  border-color: #495057;
+  cursor: not-allowed;
+}
+
+.input-button {
+  padding: 8px 14px;
+  border-radius: 0 4px 4px 0;
+  border: none;
+  background-color: #2f9cd3;
+  color: #ffffff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-sizing: border-box;
+}
+
+.input-button:hover {
+  background-color: #1d1d1d;
+}
+
+.input-button:active {
+  background-color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.5);
+}
+
+.input-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.5);
+}
+
+.input-button:disabled {
+  background-color: #495057;
+  color: #dee2e6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .chat-box-container {
+    flex-grow: 0;
+  }
+}

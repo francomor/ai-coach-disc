@@ -1,0 +1,48 @@
+.message {
+    margin: 8px 0;
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 16px;
+    line-height: 1.5;
+}
+@media (max-width: 650px) {
+    .message {
+      font-size: 15px;
+    }
+}
+
+.user-message {
+    background-color: #007bff;
+    color: #fff;
+    text-align: right;
+    margin-left: 40%;
+}
+
+.bot-message {
+    background-color: #f0f0f0;
+    text-align: left;
+    margin-right: 40%;
+}
+
+.error-message {
+    background-color: #dc3545;
+}
+
+
+@media (max-width: 370px){
+    .user-message {
+        margin-left: 15%;
+    }
+    .bot-message {
+        margin-right: 15%;
+    }
+}
+
+@media (min-width: 370px) and (max-width: 850px) {
+    .user-message {
+        margin-left: 20%;
+    }
+    .bot-message {
+        margin-right: 20%;
+    }
+}

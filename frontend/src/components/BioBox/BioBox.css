@@ -1,0 +1,72 @@
+.bio-box {
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  height: 6%;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.character-info {
+  margin-left: 16px;
+}
+
+.character-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #303030;
+}
+
+.character-description {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303030;
+}
+
+.avatar-group {
+  display: flex;
+  position: relative;
+}
+
+.avatar-overlap {
+  border: 2px solid #090909;
+  margin-left: -25px;
+}
+
+.first-avatar {
+  margin-left: 0;
+}
+
+@media (max-width: 370px) {
+  .bio-box {
+    padding: 5px;
+  }
+
+  .character-name {
+    font-size: 16px;
+  }
+
+  .character-description {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 370px) and (max-width: 650px) {
+  .bio-box {
+    padding: 10px;
+  }
+
+  .character-name {
+    font-size: 17px;
+  }
+
+  .character-description {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 650px) {
+  .bio-box {
+    padding: 20px;
+  }
+}
