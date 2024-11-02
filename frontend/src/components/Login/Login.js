@@ -91,8 +91,8 @@ const Login = ({ setToken }) => {
           <p>AI COACH DISC</p>
           <h1>Chat with an AI-powered coach to explore your own DISC profile and those of your team members</h1>
           <p>
-            Gain insights into behavioral styles, motivations, and effective
-            communication strategies tailored to foster collaboration and growth.
+            Gain insights into behavioral styles, motivations, and effective communication strategies tailored to foster
+            collaboration and growth.
           </p>
         </div>
       </div>

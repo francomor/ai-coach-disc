@@ -29,14 +29,6 @@
   margin-right: 40%;
 }
 
-.info-message {
-  color: #303030;
-  text-align: center;
-  font-weight: 600;
-  margin-left: 35%;
-  margin-right: 35%;
-}
-
 .error-message {
   background-color: #e05c5c;
   color: #ececec;
@@ -67,21 +59,17 @@
 }
 
 @media (max-width: 500px) {
-  .info-message {
+  .message-container {
     margin-left: 0;
     margin-right: 0;
   }
 }
-@media (min-width: 500px) and (max-width: 900px) {
-  .info-message {
-    margin-left: 20%;
-    margin-right: 20%;
-  }
-}
 
-@media (min-width: 900px) and (max-width: 1200px) {
-  .info-message {
-    margin-left: 25%;
-    margin-right: 25%;
+@media (min-width: 500px) and (max-width: 1200px) {
+  .user-message {
+    margin-left: 20%;
+  }
+  .bot-message {
+    margin-right: 20%;
   }
 }

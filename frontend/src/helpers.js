@@ -4,13 +4,9 @@ import { myConfig } from "./config";
 export const fetchUserDataAndGroups = async (token) => {
   try {
     const response = await axios.get(`${myConfig.apiUrl}/user_groups`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    const { userData, groups } = response.data;
-    return { userData, groups };
+    return response.data;
   } catch (error) {
     console.error("Error fetching user data and groups:", error);
     throw error;
@@ -65,12 +61,14 @@ export const logMeOut = async (accessToken, removeToken) => {
   }
 };
 
-export const fetchChatHistory = async (groupId, token, offset = 0) => {
+export const fetchChatHistory = async (groupId, token, participantId, offset = 0) => {
+  if (!participantId) {
+    return [];
+  }
+
   try {
-    const response = await axios.get(`${myConfig.apiUrl}/chat_history/${groupId}?offset=${offset}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await axios.get(`${myConfig.apiUrl}/chat_history/${groupId}/${participantId}?offset=${offset}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   } catch (error) {
@@ -79,25 +77,19 @@ export const fetchChatHistory = async (groupId, token, offset = 0) => {
   }
 };
 
-export const sendMessage = async (groupId, content, participants, token, setToken, removeToken, dispatch, userName) => {
+export const sendMessage = async (groupId, content, participant, token, setToken, removeToken, dispatch, userName) => {
   try {
     const payload = {
       groupId: groupId,
       content: content,
-      participants: participants.map((p) => ({
-        id: p.id,
-        name: p.name,
-      })),
+      participant: { id: participant.id, name: participant.name },
     };
 
-    const response = await axios({
-      method: "POST",
-      url: `${myConfig.apiUrl}/send_message`,
+    const response = await axios.post(`${myConfig.apiUrl}/send_message`, payload, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      data: JSON.stringify(payload),
     });
 
     const data = response.data;
@@ -107,25 +99,24 @@ export const sendMessage = async (groupId, content, participants, token, setToke
       setToken(data.access_token);
     }
 
-    botMessages.forEach((botMessage) => {
-      const { participantName, message, messageType } = botMessage;
-
-      if (!message || message.startsWith("Error: ")) {
+    botMessages.forEach((msg) => {
+      const { participantName, message, messageType, participantId } = msg;
+      if (messageType === "assistant") {
         dispatch({
-          type: "BOT_ERROR_RESPONSE",
+          type: "BOT_SUCCESS_RESPONSE",
           payload: {
-            userType: messageType,
+            participantId: participantId,
             message: message,
             participantName: participantName,
           },
         });
-      } else {
+      } else if (messageType === "user") {
         dispatch({
-          type: "BOT_SUCCESS_RESPONSE",
+          type: "NEW_USER_INPUT",
           payload: {
-            userType: messageType,
+            participantId: participantId,
             message: message,
-            participantName: participantName,
+            participantName: userName,
           },
         });
       }
@@ -140,31 +131,11 @@ export const sendMessage = async (groupId, content, participants, token, setToke
     dispatch({
       type: "BOT_ERROR_RESPONSE",
       payload: {
-        userType: "bot",
-        userName: userName,
+        participantId: null,
+        participantName: userName,
         message: error.message,
       },
     });
     throw error;
-  }
-};
-
-export const registerChatEvent = async (token, groupId, participant, content) => {
-  try {
-    await axios.post(
-      `${myConfig.apiUrl}/register_chat_event`,
-      {
-        groupId: groupId,
-        participantId: participant.id,
-        content: content,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-  } catch (error) {
-    console.error("Error registering chat event:", error);
   }
 };

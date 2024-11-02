@@ -6,23 +6,18 @@ import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArro
 import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import { ChatContext } from "../../contexts/chat";
 import "./ParticipantList.css";
-import { registerChatEvent } from "../../helpers";
 
-const ParticipantList = ({ accessToken, groupId, participants }) => {
+const ParticipantList = ({ accessToken, groupId, participants = [] }) => {
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
-  const [selectedParticipants, setSelectedParticipants] = useState([]);
-  const [, dispatch] = useContext(ChatContext);
+  const { selectedParticipant } = useContext(ChatContext)[0];
+  const dispatch = useContext(ChatContext)[1];
 
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 900;
       setIsMobile(mobile);
-      if (mobile) {
-        setOpen(false);
-      } else {
-        setOpen(true);
-      }
+      setOpen(!mobile);
     };
 
     window.addEventListener("resize", handleResize);
@@ -36,33 +31,20 @@ const ParticipantList = ({ accessToken, groupId, participants }) => {
   };
 
   const handleSelect = (participant) => {
-    const isSelected = selectedParticipants.includes(participant);
-    const updatedSelection = isSelected
-      ? selectedParticipants.filter((p) => p !== participant)
-      : [...selectedParticipants, participant];
-
-    setSelectedParticipants(updatedSelection);
+    const isSelected = selectedParticipant && selectedParticipant.id === participant.id;
 
     if (!isSelected) {
-      const message = `${participant.name} has entered the chat`;
       dispatch({
         type: "SELECT_PARTICIPANT",
         payload: {
-          message: message,
-          participant: participant,
+          participant,
         },
       });
-      registerChatEvent(accessToken, groupId, participant, message);
     } else {
-      const message = `${participant.name} has left the chat`;
       dispatch({
         type: "DESELECT_PARTICIPANT",
-        payload: {
-          message: message,
-          participant: participant,
-        },
+        payload: {},
       });
-      registerChatEvent(accessToken, groupId, participant, message);
     }
   };
 
@@ -92,7 +74,9 @@ const ParticipantList = ({ accessToken, groupId, participants }) => {
           {participants.map((participant) => (
             <ListItem
               key={participant.id}
-              className={`participant-item ${open ? "participant-item-expanded" : "participant-item-collapsed"} ${selectedParticipants.includes(participant) ? "selected" : ""}`}
+              className={`participant-item ${open ? "participant-item-expanded" : "participant-item-collapsed"} ${
+                selectedParticipant?.id === participant.id ? "selected" : ""
+              }`}
               onClick={() => handleSelect(participant)}
             >
               <ListItemAvatar>

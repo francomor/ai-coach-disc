@@ -1,6 +1,6 @@
 .participant-list-container {
   box-sizing: border-box;
-  background-color: #FEFEFE;
+  background-color: #fefefe;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   transition:
     width 0.3s ease-in-out,
@@ -61,7 +61,7 @@
 
 .participant-item {
   box-sizing: border-box;
-  background-color: #FEFEFE;
+  background-color: #fefefe;
   color: #303030;
   padding: 16px;
   display: flex;

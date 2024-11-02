@@ -42,6 +42,7 @@ class User(Base):
     name = Column(String(80), nullable=False)
     password = Column(String(255), nullable=False)
     user_groups = relationship("UserGroup", back_populates="user")
+    participants = relationship("Participant", back_populates="user")
 
 
 class Group(Base):
@@ -50,16 +51,19 @@ class Group(Base):
     name = Column(String(100), nullable=False)
     image = Column(String(255))
     user_groups = relationship("UserGroup", back_populates="group")
-    group_personas = relationship("GroupPersona", back_populates="group")
+    participants = relationship("Participant", back_populates="group")
 
 
-class Persona(Base):
-    __tablename__ = "Personas"
+class Participant(Base):
+    __tablename__ = "Participants"
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
     name = Column(String(100), nullable=False)
-    description = Column(String(255))
-    image = Column(String(255))
-    first_message = Column(String(255))
+    role_document = Column(Text, nullable=True)
+
+    user = relationship("User", back_populates="participants")
+    group = relationship("Group", back_populates="participants")
 
 
 class UserGroup(Base):
@@ -71,32 +75,23 @@ class UserGroup(Base):
     group = relationship("Group", back_populates="user_groups")
 
 
-class GroupPersona(Base):
-    __tablename__ = "GroupPersonas"
-    group_id = Column(Integer, ForeignKey("Groups.id"), primary_key=True)
-    persona_id = Column(Integer, ForeignKey("Personas.id"), primary_key=True)
-
-    group = relationship("Group", back_populates="group_personas")
-    persona = relationship("Persona")
-
-
 class Message(Base):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("Users.id"))
     group_id = Column(Integer, ForeignKey("Groups.id"))
     message_type = Column(String(100), nullable=False)  # user, assistant, system
-    persona_id = Column(Integer, ForeignKey("Personas.id"), nullable=True)
+    participant_id = Column(Integer, ForeignKey("Participants.id"), nullable=True)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
     group = relationship("Group")
-    persona = relationship("Persona")
+    participant = relationship("Participant")
 
-    def __init__(self, user_id, group_id, message_type, content, persona_id=None):
+    def __init__(self, user_id, group_id, message_type, content, participant_id=None):
         self.user_id = user_id
         self.group_id = group_id
-        self.persona_id = persona_id
+        self.participant_id = participant_id
         self.message_type = message_type
         self.content = content

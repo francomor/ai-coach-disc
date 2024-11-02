@@ -1,98 +1,89 @@
 import { createContext, useReducer } from "react";
 
 const initialState = {
-  chatMessages: [],
+  chatHistories: {},
   isWaitingForResponse: false,
-  selectedParticipants: [],
+  selectedParticipant: null,
 };
 
 const reducer = (state, action) => {
   switch (action.type) {
     case "NEW_USER_INPUT": {
+      const { participantId, message } = action.payload;
       return {
         ...state,
-        chatMessages: [
-          ...state.chatMessages,
-          {
-            messageType: "user",
-            participantName: action.payload.participantName,
-            message: action.payload.message,
-            isErrorMessage: false,
-          },
-        ],
+        chatHistories: {
+          ...state.chatHistories,
+          [participantId]: [
+            ...(state.chatHistories[participantId] || []),
+            {
+              messageType: "user",
+              participantName: action.payload.participantName,
+              message: message,
+              isErrorMessage: false,
+            },
+          ],
+        },
         isWaitingForResponse: true,
       };
     }
     case "BOT_SUCCESS_RESPONSE": {
+      const { participantId, message, participantName } = action.payload;
       return {
         ...state,
-        chatMessages: [
-          ...state.chatMessages,
-          {
-            messageType: "assistant",
-            participantName: action.payload.participantName,
-            message: action.payload.message,
-            isErrorMessage: false,
-          },
-        ],
+        chatHistories: {
+          ...state.chatHistories,
+          [participantId]: [
+            ...(state.chatHistories[participantId] || []),
+            {
+              messageType: "assistant",
+              participantName: participantName,
+              message: message,
+              isErrorMessage: false,
+            },
+          ],
+        },
         isWaitingForResponse: false,
       };
     }
     case "BOT_ERROR_RESPONSE": {
+      const { participantId, message, participantName } = action.payload;
       return {
         ...state,
-        chatMessages: [
-          ...state.chatMessages,
-          {
-            messageType: "assistant",
-            participantName: action.payload.participantName,
-            message: action.payload.message,
-            isErrorMessage: true,
-          },
-        ],
+        chatHistories: {
+          ...state.chatHistories,
+          [participantId]: [
+            ...(state.chatHistories[participantId] || []),
+            {
+              messageType: "assistant",
+              participantName: participantName,
+              message: message,
+              isErrorMessage: true,
+            },
+          ],
+        },
         isWaitingForResponse: false,
       };
     }
     case "LOAD_CHAT_HISTORY": {
       return {
         ...state,
-        chatMessages: [...action.payload.chatHistory],
-      };
-    }
-    case "LOAD_MORE_HISTORY": {
-      return {
-        ...state,
-        chatMessages: [...action.payload.moreHistory, ...state.chatMessages],
+        chatHistories: {
+          ...state.chatHistories,
+          [action.payload.participantId]: action.payload.chatHistory,
+        },
       };
     }
     case "SELECT_PARTICIPANT": {
       return {
         ...state,
-        selectedParticipants: [...state.selectedParticipants, action.payload.participant],
-        chatMessages: [
-          ...state.chatMessages,
-          {
-            messageType: "system",
-            participantName: action.payload.participant.name,
-            message: action.payload.message,
-            isErrorMessage: false,
-          },
-        ],
+        selectedParticipant: action.payload.participant,
       };
     }
     case "DESELECT_PARTICIPANT": {
       return {
         ...state,
-        selectedParticipants: state.selectedParticipants.filter((p) => p.id !== action.payload.participant.id),
-        chatMessages: [
-          ...state.chatMessages,
-          {
-            messageType: "system",
-            participantName: action.payload.participant.name,
-            message: action.payload.message,
-            isErrorMessage: false,
-          },
-        ],
+        selectedParticipant: null,
       };
     }
     default: {

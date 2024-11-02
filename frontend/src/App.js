@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import useToken from "./utils/useToken";
 import Login from "./components/Login/Login";
 import NotFound from "./components/NotFound/NotFound";
@@ -14,6 +15,7 @@ const App = () => {
   const [groups, setGroups] = useState([]);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isValidToken, setIsValidToken] = useState(false);
 
   const tokenData = {
     token: token,
@@ -21,24 +23,44 @@ const App = () => {
     setToken: setToken,
   };
 
+  const checkTokenValidity = (token) => {
+    try {
+      const { exp } = jwtDecode(token);
+      return exp * 1000 > Date.now();
+    } catch (error) {
+      console.error("Invalid token:", error);
+      return false;
+    }
+  };
+
+  const fetchData = useCallback(async () => {
+    try {
+      const { userData, groups } = await fetchUserDataAndGroups(token);
+      setUserData(userData);
+      setGroups(groups);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      removeToken();
+    } finally {
+      setLoading(false);
+    }
+  }, [token, removeToken]);
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    if (checkTokenValidity(token)) {
+      setIsValidToken(true);
       setLoading(true);
-
-      try {
-        const { userData, groups } = await fetchUserDataAndGroups(token);
-        setUserData(userData);
-        setGroups(groups);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [token]);
+      fetchData();
+    } else {
+      removeToken();
+      setLoading(false);
+    }
+  }, [token, fetchData, removeToken]);
 
   if (token && loading) {
     return <div>Loading...</div>;
@@ -51,7 +73,7 @@ const App = () => {
         <Route path="/login" element={<Login setToken={setToken} />} />
 
         {/* If authenticated, show chat selection and chat */}
-        {token && userData && groups.length > 0 ? (
+        {token && isValidToken && userData && groups.length > 0 ? (
           <>
             <Route path="/" element={<ChatSelection user={userData} token={tokenData} groups={groups} />} />
             {groups.map((group) => (
