@@ -64,16 +64,7 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
 
     setIsThinking(true);
     try {
-      await sendMessage(
-        groupId,
-        message,
-        selectedParticipant,
-        accessToken,
-        setToken,
-        removeToken,
-        dispatch,
-        user.name,
-      );
+      await sendMessage(groupId, message, selectedParticipant, accessToken, setToken, removeToken, dispatch, user.name);
 
       setIsThinking(false);
       if (inputRef.current) inputRef.current.focus();

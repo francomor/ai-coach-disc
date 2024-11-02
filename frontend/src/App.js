@@ -15,7 +15,7 @@ const App = () => {
   const [groups, setGroups] = useState([]);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isValidToken, setIsValidToken] = useState(false);
+  const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
 
   const tokenData = {
     token: token,
@@ -23,57 +23,65 @@ const App = () => {
     setToken: setToken,
   };
 
-  const checkTokenValidity = (token) => {
+  const checkTokenValidity = useCallback((tokenToCheck) => {
+    if (!tokenToCheck) return false;
     try {
-      const { exp } = jwtDecode(token);
+      const { exp } = jwtDecode(tokenToCheck);
       return exp * 1000 > Date.now();
     } catch (error) {
       console.error("Invalid token:", error);
       return false;
     }
-  };
+  }, []);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const { userData, groups } = await fetchUserDataAndGroups(token);
-      setUserData(userData);
-      setGroups(groups);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      removeToken();
-    } finally {
-      setLoading(false);
-    }
-  }, [token, removeToken]);
+  const handleInvalidToken = useCallback(() => {
+    setLoading(false);
+    setDataFetchAttempted(true);
+    removeToken();
+  }, [removeToken]);
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
+  const initializeApp = useCallback(async () => {
+    // Skip if we've already attempted to fetch data
+    if (dataFetchAttempted) return;
+
+    if (!token || !checkTokenValidity(token)) {
+      handleInvalidToken();
       return;
     }
 
-    if (checkTokenValidity(token)) {
-      setIsValidToken(true);
-      setLoading(true);
-      fetchData();
-    } else {
-      removeToken();
+    try {
+      const { userData: newUserData, groups: newGroups } = await fetchUserDataAndGroups(token);
+      setUserData(newUserData);
+      setGroups(newGroups);
+      setDataFetchAttempted(true);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      handleInvalidToken();
+    } finally {
       setLoading(false);
     }
-  }, [token, fetchData, removeToken]);
+  }, [token, checkTokenValidity, handleInvalidToken, dataFetchAttempted]);
 
-  if (token && loading) {
+  // Initialize app when component mounts or when dependencies change
+  useEffect(() => {
+    initializeApp();
+  }, [initializeApp]);
+
+  // Reset data fetch attempt flag when token changes
+  useEffect(() => {
+    setDataFetchAttempted(false);
+  }, [token]);
+
+  if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login */}
         <Route path="/login" element={<Login setToken={setToken} />} />
 
-        {/* If authenticated, show chat selection and chat */}
-        {token && isValidToken && userData && groups.length > 0 ? (
+        {token && userData && groups.length > 0 ? (
           <>
             <Route path="/" element={<ChatSelection user={userData} token={tokenData} groups={groups} />} />
             {groups.map((group) => (
@@ -96,11 +104,9 @@ const App = () => {
             ))}
           </>
         ) : (
-          // If not authenticated, redirect to the login
           <Route path="*" element={<Navigate to="/login" replace />} />
         )}
 
-        {/* Not found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
