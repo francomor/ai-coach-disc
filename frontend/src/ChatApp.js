@@ -1,31 +1,12 @@
+import React from "react";
 import NavBar from "./components/NavBar/NavBar";
 import BioBox from "./components/BioBox/BioBox";
-import React, { useEffect, useContext } from "react";
 import ChatBox from "./components/ChatBox/ChatBox";
-import { ChatContext } from "./contexts/chat";
-import "./ChatApp.css";
 import ParticipantList from "./components/ParticipantList/ParticipantList";
-import { fetchChatHistory } from "./helpers";
+import "./ChatApp.css";
 
 const ChatApp = ({ participants, groupName, user, token, groupId, groupCount }) => {
   const isChatSelectionNavigationDisabled = groupCount === 1;
-  const [, dispatch] = useContext(ChatContext);
-
-  useEffect(() => {
-    const loadChatHistory = async () => {
-      try {
-        const history = await fetchChatHistory(groupId, token.token);
-        dispatch({
-          type: "LOAD_CHAT_HISTORY",
-          payload: { chatHistory: history },
-        });
-      } catch (error) {
-        console.error("Error loading chat history:", error);
-      }
-    };
-
-    loadChatHistory();
-  }, [groupId, token.token, dispatch]);
 
   return (
     <div className="chat-app-container">

@@ -9,56 +9,69 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
   const [inputValue, setInputValue] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
   const [offset, setOffset] = useState(0);
 
   const selectedParticipant = chatState.selectedParticipant;
+  const chatHistoryKey = selectedParticipant ? selectedParticipant.id : null;
 
   const chatMessages = useMemo(() => {
-    return selectedParticipant ? chatState.chatHistories[selectedParticipant.id] || [] : [];
-  }, [selectedParticipant, chatState.chatHistories]);
+    return chatState.chatHistories[chatHistoryKey] || [];
+  }, [chatHistoryKey, chatState.chatHistories]);
 
   useEffect(() => {
-    if (selectedParticipant) {
-      const loadChatHistory = async () => {
-        try {
-          setIsLoadingMore(true);
-          const history = await fetchChatHistory(groupId, accessToken, selectedParticipant.id, offset);
-          const existingMessageIds = new Set(chatMessages.map((msg) => msg.timestamp));
-          const filteredHistory = history.filter((msg) => !existingMessageIds.has(msg.timestamp));
+    setOffset(0);
+    setHasLoadedHistory(false);
+  }, [selectedParticipant]);
 
-          if (filteredHistory.length > 0) {
-            dispatch({
-              type: "LOAD_CHAT_HISTORY",
-              payload: { participantId: selectedParticipant.id, chatHistory: filteredHistory.reverse() },
-            });
-          }
-          setIsLoadingMore(false);
-        } catch (error) {
-          console.error("Error loading chat history:", error);
-          setIsLoadingMore(false);
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (hasLoadedHistory) return; // Prevent re-loading if already loaded
+
+      try {
+        setIsLoadingMore(true);
+        const history = await fetchChatHistory(
+          groupId,
+          selectedParticipant ? selectedParticipant.id : null,
+          offset,
+          accessToken,
+        );
+
+        if (history && history.length > 0) {
+          const actionType = offset === 0 ? "LOAD_CHAT_HISTORY" : "LOAD_MORE_HISTORY";
+          dispatch({
+            type: actionType,
+            payload: { participantId: chatHistoryKey, chatHistory: history.reverse() },
+          });
+          messagesContainerRef.current.scrollTop += 600;
         }
-      };
+        setHasLoadedHistory(true); // Mark history as loaded
+      } catch (error) {
+        console.error("Error loading chat history:", error);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    };
 
-      loadChatHistory();
-    }
-  }, [selectedParticipant, offset, groupId, accessToken, dispatch, chatMessages]);
+    loadChatHistory();
+  }, [chatHistoryKey, offset, groupId, accessToken, dispatch, hasLoadedHistory, selectedParticipant]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     const message = inputValue;
     setInputValue("");
 
-    if (!selectedParticipant) return;
-
+    // Add user's message to chat history instantly for a responsive UI
     dispatch({
       type: "NEW_USER_INPUT",
       payload: {
         userType: "user",
         message: message,
         participantName: user.name,
+        participantId: chatHistoryKey,
       },
     });
 
@@ -75,8 +88,9 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
   };
 
   const handleScroll = () => {
-    if (messagesContainerRef.current.scrollTop === 0 && !isLoadingMore) {
+    if (chatMessages.length > 2 && messagesContainerRef.current.scrollTop === 0 && !isLoadingMore) {
       setOffset((prevOffset) => prevOffset + 10);
+      setHasLoadedHistory(false); // Allow loading more history on scroll
     }
   };
 
@@ -90,7 +104,13 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [chatMessages, isThinking]);
+  }, [isThinking]);
+
+  useEffect(() => {
+    if (messagesEndRef.current && offset === 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, offset]);
 
   return (
     <div className="chat-box-container">
@@ -115,16 +135,12 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
           type="text"
           className="input-text"
           ref={inputRef}
-          placeholder={!selectedParticipant ? "No participant selected" : "Type your message..."}
+          placeholder="Type your message..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          disabled={!selectedParticipant || isThinking}
+          disabled={isThinking}
         />
-        <button
-          className="input-button"
-          type="submit"
-          disabled={!selectedParticipant || isThinking || inputValue.trim() === ""}
-        >
+        <button className="input-button" type="submit" disabled={isThinking || inputValue.trim() === ""}>
           &gt; {/* ">" symbol */}
         </button>
       </form>

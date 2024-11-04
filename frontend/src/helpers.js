@@ -61,13 +61,12 @@ export const logMeOut = async (accessToken, removeToken) => {
   }
 };
 
-export const fetchChatHistory = async (groupId, token, participantId, offset = 0) => {
-  if (!participantId) {
-    return [];
-  }
-
+export const fetchChatHistory = async (groupId, participantId = null, offset = 0, token) => {
   try {
-    const response = await axios.get(`${myConfig.apiUrl}/chat_history/${groupId}/${participantId}?offset=${offset}`, {
+    const url = participantId
+      ? `${myConfig.apiUrl}/chat_history/${groupId}/${participantId}?offset=${offset}`
+      : `${myConfig.apiUrl}/chat_history/${groupId}?offset=${offset}`;
+    const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -82,7 +81,7 @@ export const sendMessage = async (groupId, content, participant, token, setToken
     const payload = {
       groupId: groupId,
       content: content,
-      participant: { id: participant.id, name: participant.name },
+      participant: participant ? { id: participant.id, name: participant.name } : null,
     };
 
     const response = await axios.post(`${myConfig.apiUrl}/send_message`, payload, {
@@ -110,18 +109,8 @@ export const sendMessage = async (groupId, content, participant, token, setToken
             participantName: participantName,
           },
         });
-      } else if (messageType === "user") {
-        dispatch({
-          type: "NEW_USER_INPUT",
-          payload: {
-            participantId: participantId,
-            message: message,
-            participantName: userName,
-          },
-        });
       }
     });
-
     return data;
   } catch (error) {
     if (error.response && [401, 403, 422].includes(error.response.status)) {

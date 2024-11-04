@@ -21,6 +21,7 @@ const reducer = (state, action) => {
               participantName: action.payload.participantName,
               message: message,
               isErrorMessage: false,
+              timestamp: new Date().toISOString(),
             },
           ],
         },
@@ -40,6 +41,7 @@ const reducer = (state, action) => {
               participantName: participantName,
               message: message,
               isErrorMessage: false,
+              timestamp: new Date().toISOString(),
             },
           ],
         },
@@ -59,6 +61,7 @@ const reducer = (state, action) => {
               participantName: participantName,
               message: message,
               isErrorMessage: true,
+              timestamp: new Date().toISOString(),
             },
           ],
         },
@@ -71,6 +74,19 @@ const reducer = (state, action) => {
         chatHistories: {
           ...state.chatHistories,
           [action.payload.participantId]: action.payload.chatHistory,
+        },
+      };
+    }
+    case "LOAD_MORE_HISTORY": {
+      const { participantId, chatHistory } = action.payload;
+      return {
+        ...state,
+        chatHistories: {
+          ...state.chatHistories,
+          [participantId]: [
+            ...chatHistory, // Append older messages at the beginning
+            ...(state.chatHistories[participantId] || []),
+          ],
         },
       };
     }

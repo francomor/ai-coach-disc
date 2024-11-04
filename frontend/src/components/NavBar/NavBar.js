@@ -77,7 +77,12 @@ const NavBar = ({ user, removeToken, groupName, isChatSelectionNavigationDisable
           </Box>
 
           {/* Right Avatar */}
-          <Box sx={{ flexGrow: 0, padding: "0 5px 0 55px;" }}>
+          <Box
+            sx={{
+              flexGrow: 0,
+              padding: { xs: "0 5px 0 55px;", sm: "0 5px 0 55px;", md: "0 5px 0 103px;" },
+            }}
+          >
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <Avatar alt={user.name} src="/static/images/avatar/2.jpg" />
