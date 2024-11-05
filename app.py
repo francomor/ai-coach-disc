@@ -16,7 +16,17 @@ from flask_jwt_extended import (
 )
 from flask_sqlalchemy import SQLAlchemy
 
-from database_models import DB_URI, Base, Group, Message, Participant, User, UserGroup
+from database_models import (
+    DB_URI,
+    Base,
+    Group,
+    Message,
+    OnboardingAnswer,
+    Participant,
+    Question,
+    User,
+    UserGroup,
+)
 from model import predict
 
 load_dotenv()
@@ -301,10 +311,51 @@ def get_user_groups():
                 "id": user.id,
                 "name": user.name,
                 "username": user.username,
+                "onboarding_complete": user.onboarding_complete,
             },
             "groups": result,
         }
     )
+
+
+@app.route("/questions", methods=["GET"])
+@jwt_required()
+def get_questions():
+    print("get_questions")
+    questions = db.session.query(Question).all()
+    return jsonify([{"id": q.id, "text": q.text} for q in questions])
+
+
+@app.route("/complete_onboarding", methods=["POST"])
+@jwt_required()
+def complete_onboarding():
+    user_id = get_jwt_identity()
+    user = db.session.query(User).filter_by(id=user_id).first()
+
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
+    user.onboarding_complete = True
+
+    # Handle answers
+    answers = request.json.get("answers")
+    if answers:
+        for item in answers:
+            question_id = item.get("question_id")
+            answer_text = item.get("answer")
+            if question_id and answer_text:
+                answer = OnboardingAnswer(
+                    user_id=user_id, question_id=question_id, answer=answer_text
+                )
+                db.session.add(answer)
+
+    # Handle the DISC profile PDF upload
+    disc_file = request.files.get("discProfile")
+    if disc_file:
+        disc_file.save(f"static/uploads/{user_id}_DISC_Profile.pdf")
+
+    db.session.commit()
+    return jsonify({"msg": "Onboarding complete"}), 200
 
 
 if __name__ == "__main__":

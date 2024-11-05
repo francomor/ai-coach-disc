@@ -13,6 +13,36 @@ export const fetchUserDataAndGroups = async (token) => {
   }
 };
 
+export const fetchQuestions = async (token) => {
+  try {
+    const response = await axios.get(`${myConfig.apiUrl}/questions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching questions:", error);
+    throw error;
+  }
+};
+
+export const completeOnboarding = async (token, answers, file) => {
+  const formData = new FormData();
+  formData.append("answers", JSON.stringify(answers));
+  if (file) formData.append("discProfile", file);
+
+  try {
+    await axios.post(`${myConfig.apiUrl}/complete_onboarding`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    throw error;
+  }
+};
+
 export const logMeIn = async (username, password, setToken, setErrorValue) => {
   try {
     const response = await axios({

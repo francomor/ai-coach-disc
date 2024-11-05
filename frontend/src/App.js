@@ -7,7 +7,8 @@ import Login from "./components/Login/Login";
 import NotFound from "./components/NotFound/NotFound";
 import ChatApp from "./ChatApp";
 import ChatSelection from "./ChatSelection";
-import { fetchUserDataAndGroups } from "./helpers";
+import Onboarding from "./components/Onboarding/Onboarding";
+import { fetchUserDataAndGroups, completeOnboarding } from "./helpers";
 import { ChatProvider } from "./contexts/chat";
 
 const App = () => {
@@ -16,6 +17,7 @@ const App = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
+  const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
 
   const tokenData = {
     token: token,
@@ -41,7 +43,6 @@ const App = () => {
   }, [removeToken]);
 
   const initializeApp = useCallback(async () => {
-    // Skip if we've already attempted to fetch data
     if (dataFetchAttempted) return;
 
     if (!token || !checkTokenValidity(token)) {
@@ -53,6 +54,7 @@ const App = () => {
       const { userData: newUserData, groups: newGroups } = await fetchUserDataAndGroups(token);
       setUserData(newUserData);
       setGroups(newGroups);
+      setIsOnboardingComplete(newUserData.onboarding_complete);
       setDataFetchAttempted(true);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -62,12 +64,19 @@ const App = () => {
     }
   }, [token, checkTokenValidity, handleInvalidToken, dataFetchAttempted]);
 
-  // Initialize app when component mounts or when dependencies change
+  const handleOnboardingComplete = async (answers, file) => {
+    try {
+      await completeOnboarding(token, answers, file);
+      setIsOnboardingComplete(true);
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+    }
+  };
+
   useEffect(() => {
     initializeApp();
   }, [initializeApp]);
 
-  // Reset data fetch attempt flag when token changes
   useEffect(() => {
     setDataFetchAttempted(false);
   }, [token]);
@@ -81,7 +90,14 @@ const App = () => {
       <Routes>
         <Route path="/login" element={<Login setToken={setToken} />} />
 
-        {token && userData && groups.length > 0 ? (
+        {token && userData && !isOnboardingComplete ? (
+          <Route
+            path="/"
+            element={
+              <Onboarding onComplete={handleOnboardingComplete} accessToken={token} user={userData} token={tokenData} />
+            }
+          />
+        ) : token && userData && groups.length > 0 ? (
           <>
             <Route path="/" element={<ChatSelection user={userData} token={tokenData} groups={groups} />} />
             {groups.map((group) => (

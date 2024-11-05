@@ -3,6 +3,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
@@ -35,14 +36,33 @@ session = Session()
 Base = declarative_base()
 
 
+class Question(Base):
+    __tablename__ = "Questions"
+    id = Column(Integer, primary_key=True)
+    text = Column(String(255), nullable=False)
+
+
+class OnboardingAnswer(Base):
+    __tablename__ = "OnboardingAnswers"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    question_id = Column(Integer, ForeignKey("Questions.id"), nullable=False)
+    answer = Column(Text, nullable=True)
+
+    user = relationship("User", back_populates="onboarding_answers")
+    question = relationship("Question")
+
+
 class User(Base):
     __tablename__ = "Users"
     id = Column(Integer, primary_key=True)
     username = Column(String(80), unique=True, nullable=False)
     name = Column(String(80), nullable=False)
     password = Column(String(255), nullable=False)
+    onboarding_complete = Column(Boolean, default=False)
     user_groups = relationship("UserGroup", back_populates="user")
     participants = relationship("Participant", back_populates="user")
+    onboarding_answers = relationship("OnboardingAnswer", back_populates="user")
 
 
 class Group(Base):
