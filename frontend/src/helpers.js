@@ -158,3 +158,35 @@ export const sendMessage = async (groupId, content, participant, token, setToken
     throw error;
   }
 };
+
+export const fetchFileHistory = async (token, userGroupId) => {
+  try {
+    const response = await axios.get(`${myConfig.apiUrl}/file-history`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { user_group_id: userGroupId },
+    });
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error("Error fetching file history:", error);
+    return [];
+  }
+};
+
+export const uploadFile = async (token, file, userGroupId) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("user_group_id", userGroupId);
+
+  try {
+    const response = await axios.post(`${myConfig.apiUrl}/upload-file`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+};

@@ -3,7 +3,7 @@ import { fetchQuestions } from "../../helpers";
 import NavBar from "../NavBar/NavBar";
 import "./Onboarding.css";
 
-const Onboarding = ({ onComplete, accessToken, user, token }) => {
+const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [file, setFile] = useState(null);
@@ -46,6 +46,7 @@ const Onboarding = ({ onComplete, accessToken, user, token }) => {
         isChatSelectionNavigationDisabled={true}
         accessToken={token.token}
         usebigLogo={false}
+        groups={groups}
       />
       <div className="onboarding-container">
         <h2>Onboarding</h2>

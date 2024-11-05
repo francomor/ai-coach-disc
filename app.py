@@ -1,4 +1,6 @@
 import json
+import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List
 
@@ -15,6 +17,7 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
 )
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 
 from database_models import (
     DB_URI,
@@ -26,6 +29,8 @@ from database_models import (
     Question,
     User,
     UserGroup,
+    UserGroupFile,
+    session,
 )
 from model import predict
 
@@ -56,6 +61,12 @@ jwt = JWTManager(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
+
+app.config["UPLOAD_FOLDER"] = "data"
+
+# Ensure the /data directory exists
+if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+    os.makedirs(app.config["UPLOAD_FOLDER"])
 
 
 @app.route("/token", methods=["POST"])
@@ -321,7 +332,6 @@ def get_user_groups():
 @app.route("/questions", methods=["GET"])
 @jwt_required()
 def get_questions():
-    print("get_questions")
     questions = db.session.query(Question).all()
     return jsonify([{"id": q.id, "text": q.text} for q in questions])
 
@@ -356,6 +366,96 @@ def complete_onboarding():
 
     db.session.commit()
     return jsonify({"msg": "Onboarding complete"}), 200
+
+
+@app.route("/upload-file", methods=["POST"])
+@jwt_required()
+def upload_file():
+    user_id = get_jwt_identity()
+    user_group_id = request.form.get(
+        "user_group_id"
+    )  # UserGroup ID should be provided in the form data
+
+    # Check if the user group exists for this user
+    user_group = (
+        session.query(UserGroup)
+        .filter_by(user_id=user_id, group_id=user_group_id)
+        .first()
+    )
+    if not user_group:
+        return jsonify({"msg": "User group not found or unauthorized"}), 404
+
+    # Retrieve the file from the request
+    if "file" not in request.files:
+        return jsonify({"msg": "No file provided"}), 400
+
+    file = request.files["file"]
+
+    # Ensure the file has a valid PDF extension
+    if file.filename == "" or not file.filename.endswith(".pdf"):
+        return jsonify({"msg": "Invalid file type; only PDFs allowed"}), 400
+
+    # Secure the filename and save the file
+    original_filename = secure_filename(file.filename)
+    file_uuid = uuid.uuid4().hex  # Generate a unique UUID for the file
+    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id))
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
+
+    file_path = os.path.join(user_folder, f"{file_uuid}.pdf")
+    file.save(file_path)
+
+    # Save file information to the database
+    file_url = f"{user_folder}/{file_uuid}.pdf"
+    new_file = UserGroupFile(
+        user_group_id=user_group_id,
+        user_id=user_id,
+        file_name=original_filename,  # Save the original file name
+        file_url=file_url,  # Save the path with UUID
+    )
+    session.add(new_file)
+    session.commit()
+
+    return (
+        jsonify({"msg": "File uploaded successfully", "filename": original_filename}),
+        200,
+    )
+
+
+@app.route("/file-history", methods=["GET"])
+@jwt_required()
+def file_history():
+    user_id = get_jwt_identity()
+    user_group_id = request.args.get("user_group_id", type=int)
+
+    user_group = (
+        session.query(UserGroup)
+        .filter_by(user_id=user_id, group_id=user_group_id)
+        .first()
+    )
+    if not user_group:
+        return jsonify({"msg": "User group not found or unauthorized"}), 404
+
+    # Fetch the last 3 files for this user group
+    files = (
+        session.query(UserGroupFile)
+        .filter_by(user_group_id=user_group_id, user_id=user_id)
+        .order_by(UserGroupFile.uploaded_at.desc())
+        .limit(3)
+        .all()
+    )
+
+    # Return file history for this specific group, including the original file name
+    history = [
+        {
+            "file_url": file.file_url,
+            "file_name": file.file_name,
+            "uploaded_at": file.uploaded_at,
+        }
+        for file in files
+    ]
+
+    return jsonify(history)
 
 
 if __name__ == "__main__":

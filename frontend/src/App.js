@@ -94,7 +94,13 @@ const App = () => {
           <Route
             path="/"
             element={
-              <Onboarding onComplete={handleOnboardingComplete} accessToken={token} user={userData} token={tokenData} />
+              <Onboarding
+                onComplete={handleOnboardingComplete}
+                accessToken={token}
+                user={userData}
+                token={tokenData}
+                groups={groups}
+              />
             }
           />
         ) : token && userData && groups.length > 0 ? (
@@ -112,7 +118,7 @@ const App = () => {
                       participants={group.participants}
                       groupName={group.name}
                       groupId={group.id}
-                      groupCount={groups.length}
+                      groups={groups}
                     />
                   </ChatProvider>
                 }

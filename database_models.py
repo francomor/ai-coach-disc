@@ -14,6 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.schema import ForeignKeyConstraint
 
 load_dotenv()
 
@@ -86,6 +87,30 @@ class Participant(Base):
     group = relationship("Group", back_populates="participants")
 
 
+class UserGroupFile(Base):
+    __tablename__ = "UserGroupFiles"
+    id = Column(Integer, primary_key=True)
+    user_group_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    file_name = Column(String(255), nullable=False)  # Store the original file name
+    file_url = Column(String(255), nullable=False)  # Store the file path with UUID
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_group_id", "user_id"],
+            ["UserGroups.group_id", "UserGroups.user_id"],
+        ),
+    )
+
+    user_group = relationship(
+        "UserGroup",
+        back_populates="files",
+        primaryjoin="and_(UserGroupFile.user_group_id == UserGroup.group_id, "
+        "UserGroupFile.user_id == UserGroup.user_id)",
+    )
+
+
 class UserGroup(Base):
     __tablename__ = "UserGroups"
     user_id = Column(Integer, ForeignKey("Users.id"), primary_key=True)
@@ -93,6 +118,12 @@ class UserGroup(Base):
 
     user = relationship("User", back_populates="user_groups")
     group = relationship("Group", back_populates="user_groups")
+    files = relationship(
+        "UserGroupFile",
+        back_populates="user_group",
+        cascade="all, delete-orphan",
+        foreign_keys="[UserGroupFile.user_id, UserGroupFile.user_group_id]",
+    )
 
 
 class Message(Base):

@@ -5,8 +5,8 @@ import ChatBox from "./components/ChatBox/ChatBox";
 import ParticipantList from "./components/ParticipantList/ParticipantList";
 import "./ChatApp.css";
 
-const ChatApp = ({ participants, groupName, user, token, groupId, groupCount }) => {
-  const isChatSelectionNavigationDisabled = groupCount === 1;
+const ChatApp = ({ participants, groupName, user, token, groupId, groups }) => {
+  const isChatSelectionNavigationDisabled = groups.length === 1;
 
   return (
     <div className="chat-app-container">
@@ -17,6 +17,7 @@ const ChatApp = ({ participants, groupName, user, token, groupId, groupCount }) 
         isChatSelectionNavigationDisabled={isChatSelectionNavigationDisabled}
         accessToken={token.token}
         usebigLogo={false}
+        groups={groups}
       />
       <div className="content-container">
         <ParticipantList accessToken={token.token} groupId={groupId} participants={participants} />

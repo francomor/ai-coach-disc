@@ -35,6 +35,7 @@ const ChatSelection = ({ groups, user, token }) => {
         isChatSelectionNavigationDisabled={true}
         accessToken={token.token}
         usebigLogo={!isMobile}
+        groups={groups}
       />
       <div className="chat-selection-container">
         <div className="welcome-container">
