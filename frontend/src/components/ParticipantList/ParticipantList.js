@@ -188,7 +188,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
         </List>
       )}
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} disableEnforceFocus disableAutoFocus>
         <DialogTitle>{editMode ? "Editar participante" : "Agregar nuevo participante"}</DialogTitle>
         <DialogContent onKeyDown={handleKeyDown}>
           <TextField
