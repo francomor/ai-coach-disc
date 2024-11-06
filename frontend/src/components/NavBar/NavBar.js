@@ -175,9 +175,31 @@ const NavBar = ({
             ))}
           </Tabs>
 
-          <Box sx={{ mt: 2 }}>
-            <input type="file" accept="application/pdf" onChange={handleFileChange} />
-            <Button variant="contained" sx={{ mt: 2 }} onClick={handleFileUpload} disabled={!selectedFile}>
+          <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2 }}>
+            <input
+              accept="application/pdf"
+              id="upload-file"
+              type="file"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            <label htmlFor="upload-file">
+              <Button variant="outlined" component="span">
+                Choose File
+              </Button>
+            </label>
+            <Typography
+              variant="body2"
+              sx={{
+                maxWidth: "150px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {selectedFile ? selectedFile.name : "No file chosen"}
+            </Typography>
+            <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
               Upload PDF
             </Button>
           </Box>
