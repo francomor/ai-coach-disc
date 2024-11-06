@@ -6,7 +6,7 @@ import "./Onboarding.css";
 const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
-  const [file, setFile] = useState(null);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -21,12 +21,18 @@ const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
     loadQuestions();
   }, [accessToken]);
 
-  const handleChange = (questionId, event) => {
-    setAnswers({ ...answers, [questionId]: event.target.value });
-  };
+  useEffect(() => {
+    if (questions.length > 0) {
+      const allAnswered = questions.every((q) => answers[q.id]?.trim() !== "");
+      setIsSubmitDisabled(!allAnswered);
+    }
+  }, [answers, questions]);
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const handleChange = (questionId, event) => {
+    setAnswers((prevAnswers) => ({
+      ...prevAnswers,
+      [questionId]: event.target.value,
+    }));
   };
 
   const handleSubmit = () => {
@@ -34,7 +40,7 @@ const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
       question_id: parseInt(questionId, 10),
       answer,
     }));
-    onComplete(formattedAnswers, file);
+    onComplete(formattedAnswers);
   };
 
   return (
@@ -65,19 +71,7 @@ const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
               />
             </div>
           ))}
-          <div className="file-input-group">
-            <label className="onboarding-label" htmlFor="disc-profile">
-              Upload DISC Profile (PDF)
-            </label>
-            <input
-              type="file"
-              id="disc-profile"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              className="file-input"
-            />
-          </div>
-          <button type="button" onClick={handleSubmit} className="onboarding-submit-button">
+          <button type="button" onClick={handleSubmit} className="onboarding-submit-button" disabled={isSubmitDisabled}>
             Submit
           </button>
         </form>

@@ -64,9 +64,9 @@ const App = () => {
     }
   }, [token, checkTokenValidity, handleInvalidToken, dataFetchAttempted]);
 
-  const handleOnboardingComplete = async (answers, file) => {
+  const handleOnboardingComplete = async (answers) => {
     try {
-      await completeOnboarding(token, answers, file);
+      await completeOnboarding(token, answers);
       setIsOnboardingComplete(true);
     } catch (error) {
       console.error("Error completing onboarding:", error);

@@ -127,7 +127,7 @@ class UserGroup(Base):
 
 
 class Message(Base):
-    __tablename__ = "messages"
+    __tablename__ = "Messages"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("Users.id"))
     group_id = Column(Integer, ForeignKey("Groups.id"))

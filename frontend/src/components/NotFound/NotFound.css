@@ -1,22 +1,22 @@
 .not-found {
   padding: 8rem 0;
   text-align: center;
-  background-color: black;
-  font-family:
-    Kumbh Sans,
-    serif;
+  background-color: #f2f2f2;
+  font-family: Montserrat, sans-serif;
 }
 
 .not-found-title {
   font-size: 3rem;
   margin-bottom: 2rem;
-  color: white;
+  font-weight: 600;
+  color: #303030;
   margin-top: 1em;
 }
 
 .not-found-text {
   font-size: 1.5rem;
   margin-bottom: 2rem;
-  color: white;
+  font-weight: 600;
+  color: #303030;
   margin-top: 1em;
 }

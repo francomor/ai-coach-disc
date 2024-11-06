@@ -92,6 +92,17 @@
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.5);
 }
 
+.onboarding-submit-button.invalid {
+  border-color: #ff0000;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5);
+}
+
+.onboarding-submit-button:disabled {
+  background-color: #495057;
+  color: #dee2e6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .onboarding-container {
     padding: 20px;

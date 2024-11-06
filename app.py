@@ -359,11 +359,6 @@ def complete_onboarding():
                 )
                 db.session.add(answer)
 
-    # Handle the DISC profile PDF upload
-    disc_file = request.files.get("discProfile")
-    if disc_file:
-        disc_file.save(f"static/uploads/{user_id}_DISC_Profile.pdf")
-
     db.session.commit()
     return jsonify({"msg": "Onboarding complete"}), 200
 

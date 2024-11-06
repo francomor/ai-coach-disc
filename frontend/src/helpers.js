@@ -25,18 +25,18 @@ export const fetchQuestions = async (token) => {
   }
 };
 
-export const completeOnboarding = async (token, answers, file) => {
-  const formData = new FormData();
-  formData.append("answers", JSON.stringify(answers));
-  if (file) formData.append("discProfile", file);
-
+export const completeOnboarding = async (token, answers) => {
   try {
-    await axios.post(`${myConfig.apiUrl}/complete_onboarding`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
+    await axios.post(
+      `${myConfig.apiUrl}/complete_onboarding`,
+      { answers: answers },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
   } catch (error) {
     console.error("Error completing onboarding:", error);
     throw error;
