@@ -306,6 +306,7 @@ def get_user_groups():
                 "id": group.id,
                 "name": group.name,
                 "image": group.image,
+                "urlSlug": group.url_slug,
                 "participants": [
                     {
                         "id": p.id,

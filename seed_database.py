@@ -31,8 +31,8 @@ user_data = [
 ]
 
 groups_data = [
-    {"id": 1, "name": "DISC Coach", "image": "/disc.png"},
-    {"id": 2, "name": "HPTI Coach", "image": "/hpti.png"},
+    {"id": 1, "name": "DISC Coach", "url_slug": "disc-coach", "image": "/disc.png"},
+    {"id": 2, "name": "HPTI Coach", "url_slug": "hpti-coach", "image": "/hpti.png"},
 ]
 
 participants_data = [
@@ -134,7 +134,12 @@ def populate_tables():
 
     # Add groups
     for group in groups_data:
-        new_group = Group(id=group["id"], name=group["name"], image=group["image"])
+        new_group = Group(
+            id=group["id"],
+            name=group["name"],
+            url_slug=group["url_slug"],
+            image=group["image"],
+        )
         session.add(new_group)
 
     # Add participants

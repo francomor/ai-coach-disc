@@ -70,6 +70,7 @@ class Group(Base):
     __tablename__ = "Groups"
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
+    url_slug = Column(String(50), nullable=False)
     image = Column(String(255))
     user_groups = relationship("UserGroup", back_populates="group")
     participants = relationship("Participant", back_populates="group")

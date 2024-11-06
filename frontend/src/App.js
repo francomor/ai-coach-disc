@@ -109,7 +109,7 @@ const App = () => {
             {groups.map((group) => (
               <Route
                 key={group.id}
-                path={`/chat/group/${group.id}`}
+                path={`/chat/group/${group.urlSlug}`}
                 element={
                   <ChatProvider>
                     <ChatApp

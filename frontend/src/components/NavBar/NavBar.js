@@ -144,19 +144,19 @@ const NavBar = ({
           </Toolbar>
         </Container>
         {usebigLogo && (
-        <Box display="flex" justifyContent="center">
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton onClick={handleLogoClick} sx={{ p: 0 }} disabled={isChatSelectionNavigationDisabled}>
-              <img
-                src={`${process.env.PUBLIC_URL}/thomas_logo.png`}
-                alt="Logo AI Coach"
-                style={{ width: "345px", height: "102px" }}
-              />
-            </IconButton>
+          <Box display="flex" justifyContent="center">
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <IconButton onClick={handleLogoClick} sx={{ p: 0 }} disabled={isChatSelectionNavigationDisabled}>
+                <img
+                  src={`${process.env.PUBLIC_URL}/thomas_logo.png`}
+                  alt="Logo AI Coach"
+                  style={{ width: "345px", height: "102px" }}
+                />
+              </IconButton>
+            </Box>
           </Box>
-        </Box>
         )}
-    </AppBar>
+      </AppBar>
 
       {/* Modal for My Files */}
       <Modal open={openFileModal} onClose={() => setOpenFileModal(false)}>

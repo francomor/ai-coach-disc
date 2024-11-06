@@ -47,7 +47,7 @@ const ChatSelection = ({ groups, user, token }) => {
             <div key={group.id} className="chat-selection-card">
               <img src={group.image} alt={group.name} className="group-image" />
               <h3 className="group-name">{group.name}</h3>
-              <Link to={`/chat/group/${group.id}`}>
+              <Link to={`/chat/group/${group.urlSlug}`}>
                 <button className="chat-button">
                   <span className="button-text">Ir al chat</span>
                   <span className="button-icon">&gt;</span> {/* ">" symbol */}

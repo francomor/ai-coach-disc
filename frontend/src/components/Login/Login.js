@@ -89,7 +89,9 @@ const Login = ({ setToken }) => {
       <div className="login-right">
         <div className="login-description">
           <p>AI COACH DISC</p>
-          <h1>Chatea con un coach impulsado por IA para explorar tu propio perfil DISC y el de los miembros de tu equipo</h1>
+          <h1>
+            Chatea con un coach impulsado por IA para explorar tu propio perfil DISC y el de los miembros de tu equipo
+          </h1>
           <p>
             Obtén información sobre estilos de comportamiento, motivaciones y estrategias de comunicación efectivas
             diseñadas para fomentar la colaboración y el crecimiento.
