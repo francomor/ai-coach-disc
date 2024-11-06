@@ -218,3 +218,19 @@ export const fetchParticipants = async (token, groupId) => {
     throw error;
   }
 };
+
+export const editParticipant = async (token, participantId, name) => {
+  try {
+    const response = await axios.put(
+      `${myConfig.apiUrl}/edit-participant`,
+      { participantId, name },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error editing participant:", error);
+    throw error;
+  }
+};

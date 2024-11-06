@@ -534,5 +534,34 @@ def get_participants(group_id):
     return jsonify({"participants": participants_data})
 
 
+@app.route("/edit-participant", methods=["PUT"])
+@jwt_required()
+def edit_participant():
+    user_id = get_jwt_identity()
+    data = request.json
+    participant_id = data.get("participantId")
+    new_name = data.get("name")
+
+    if not participant_id or not new_name:
+        return jsonify({"msg": "Participant ID and name are required"}), 400
+
+    if len(new_name) < 2 or len(new_name) > 20:
+        return jsonify({"msg": "Name must be between 2 and 20 characters"}), 400
+
+    participant = (
+        db.session.query(Participant)
+        .filter_by(id=participant_id, user_id=user_id)
+        .first()
+    )
+
+    if not participant:
+        return jsonify({"msg": "Participant not found or unauthorized"}), 403
+
+    participant.name = new_name
+    db.session.commit()
+
+    return jsonify({"msg": "Participant updated successfully"})
+
+
 if __name__ == "__main__":
     app.run(debug=True)

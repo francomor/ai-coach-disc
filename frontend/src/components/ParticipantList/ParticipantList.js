@@ -11,20 +11,24 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
+  IconButton,
 } from "@mui/material";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import EditIcon from "@mui/icons-material/Edit";
 import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import { ChatContext } from "../../contexts/chat";
-import { addParticipant, fetchParticipants } from "../../helpers";
+import { addParticipant, fetchParticipants, editParticipant } from "../../helpers"; // Import helper functions
 import "./ParticipantList.css";
 
 const ParticipantList = ({ accessToken, groupId }) => {
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newParticipantName, setNewParticipantName] = useState("");
+  const [editMode, setEditMode] = useState(false);
+  const [currentParticipantId, setCurrentParticipantId] = useState(null);
+  const [participantName, setParticipantName] = useState("");
   const [nameError, setNameError] = useState("");
   const [participants, setParticipants] = useState([]);
   const { selectedParticipant } = useContext(ChatContext)[0];
@@ -44,7 +48,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
   }, []);
 
   useEffect(() => {
-    fetchParticipantsList(); // Fetch participants when component loads
+    fetchParticipantsList();
   }, []);
 
   const fetchParticipantsList = async () => {
@@ -79,10 +83,10 @@ const ParticipantList = ({ accessToken, groupId }) => {
   };
 
   const validateInputs = () => {
-    if (!newParticipantName) {
+    if (!participantName) {
       setNameError("El nombre es obligatorio");
       return false;
-    } else if (newParticipantName.length < 2 || newParticipantName.length > 20) {
+    } else if (participantName.length < 2 || participantName.length > 20) {
       setNameError("El nombre debe tener entre 2 y 20 caracteres");
       return false;
     } else {
@@ -97,24 +101,46 @@ const ParticipantList = ({ accessToken, groupId }) => {
     }
 
     try {
-      await addParticipant(accessToken, groupId, newParticipantName);
+      await addParticipant(accessToken, groupId, participantName);
       setDialogOpen(false);
-      setNewParticipantName("");
+      setParticipantName("");
       fetchParticipantsList();
     } catch (error) {
       console.error("Error adding participant:", error);
     }
   };
 
+  const handleEditParticipant = async () => {
+    if (!validateInputs()) {
+      return;
+    }
+
+    try {
+      await editParticipant(accessToken, currentParticipantId, participantName);
+      setDialogOpen(false);
+      setEditMode(false);
+      setParticipantName("");
+      fetchParticipantsList();
+    } catch (error) {
+      console.error("Error editing participant:", error);
+    }
+  };
+
+  const openEditDialog = (participant) => {
+    setEditMode(true);
+    setCurrentParticipantId(participant.id);
+    setParticipantName(participant.name);
+    setDialogOpen(true);
+  };
+
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
-      handleAddParticipant();
+      editMode ? handleEditParticipant() : handleAddParticipant();
     }
   };
 
   return (
     <div className={`participant-list-container ${open ? "expanded" : "collapsed"}`}>
-      {/* Header */}
       <div className={`header ${open ? "header-expanded" : "header-collapsed"}`}>
         {(isMobile || open) && <span className="header-title">Participantes</span>}
         <button onClick={handleToggle} className="toggle-button">
@@ -132,12 +158,10 @@ const ParticipantList = ({ accessToken, groupId }) => {
         </button>
       </div>
 
-      {/* Add Participant Button */}
       <Button variant="contained" onClick={() => setDialogOpen(true)}>
         Agregar participante
       </Button>
 
-      {/* Participants List */}
       {(!isMobile || open) && (
         <List>
           {participants.map((participant) => (
@@ -156,29 +180,33 @@ const ParticipantList = ({ accessToken, groupId }) => {
                   <ListItemText primary={<span className="participant-name">{participant.name}</span>} />
                 </div>
               )}
+              <IconButton onClick={() => openEditDialog(participant)}>
+                <EditIcon />
+              </IconButton>
             </ListItem>
           ))}
         </List>
       )}
 
-      {/* Add Participant Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-        <DialogTitle>Agregar nuevo participante</DialogTitle>
+        <DialogTitle>{editMode ? "Editar participante" : "Agregar nuevo participante"}</DialogTitle>
         <DialogContent onKeyDown={handleKeyDown}>
           <TextField
             autoFocus
             margin="dense"
             label="Nombre"
             fullWidth
-            value={newParticipantName}
-            onChange={(e) => setNewParticipantName(e.target.value)}
+            value={participantName}
+            onChange={(e) => setParticipantName(e.target.value)}
             error={!!nameError}
             helperText={nameError}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleAddParticipant}>Agregar</Button>
+          <Button onClick={editMode ? handleEditParticipant : handleAddParticipant}>
+            {editMode ? "Guardar" : "Agregar"}
+          </Button>
         </DialogActions>
       </Dialog>
     </div>
