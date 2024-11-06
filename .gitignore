@@ -17,3 +17,5 @@ env.json
 
 .python-version
 local.py
+
+/data/
