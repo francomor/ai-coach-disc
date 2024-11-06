@@ -112,7 +112,7 @@ def logout():
     return response
 
 
-@app.route("/chat_history/<int:group_id>", methods=["GET"])
+@app.route("/chat-history/<int:group_id>", methods=["GET"])
 @jwt_required()
 def get_group_chat_history(group_id):
     user_id = get_jwt_identity()
@@ -142,7 +142,7 @@ def get_group_chat_history(group_id):
     return jsonify(response)
 
 
-@app.route("/chat_history/<int:group_id>/<int:participant_id>", methods=["GET"])
+@app.route("/chat-history/<int:group_id>/<int:participant_id>", methods=["GET"])
 @jwt_required()
 def get_messages(group_id, participant_id):
     try:
@@ -189,7 +189,7 @@ def get_messages(group_id, participant_id):
         return jsonify({"msg": "Server error"}), 500
 
 
-@app.route("/send_message", methods=["POST"])
+@app.route("/send-message", methods=["POST"])
 @jwt_required()
 def send_message():
     try:
@@ -279,7 +279,7 @@ def get_history(
     return messages
 
 
-@app.route("/user_groups", methods=["GET"])
+@app.route("/user-groups", methods=["GET"])
 @jwt_required()
 def get_user_groups():
     user_id = get_jwt_identity()
@@ -336,7 +336,7 @@ def get_questions():
     return jsonify([{"id": q.id, "text": q.text} for q in questions])
 
 
-@app.route("/complete_onboarding", methods=["POST"])
+@app.route("/complete-onboarding", methods=["POST"])
 @jwt_required()
 def complete_onboarding():
     user_id = get_jwt_identity()

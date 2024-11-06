@@ -3,7 +3,7 @@ import { myConfig } from "./config";
 
 export const fetchUserDataAndGroups = async (token) => {
   try {
-    const response = await axios.get(`${myConfig.apiUrl}/user_groups`, {
+    const response = await axios.get(`${myConfig.apiUrl}/user-groups`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -28,7 +28,7 @@ export const fetchQuestions = async (token) => {
 export const completeOnboarding = async (token, answers) => {
   try {
     await axios.post(
-      `${myConfig.apiUrl}/complete_onboarding`,
+      `${myConfig.apiUrl}/complete-onboarding`,
       { answers: answers },
       {
         headers: {
@@ -94,8 +94,8 @@ export const logMeOut = async (accessToken, removeToken) => {
 export const fetchChatHistory = async (groupId, participantId = null, offset = 0, token) => {
   try {
     const url = participantId
-      ? `${myConfig.apiUrl}/chat_history/${groupId}/${participantId}?offset=${offset}`
-      : `${myConfig.apiUrl}/chat_history/${groupId}?offset=${offset}`;
+      ? `${myConfig.apiUrl}/chat-history/${groupId}/${participantId}?offset=${offset}`
+      : `${myConfig.apiUrl}/chat-history/${groupId}?offset=${offset}`;
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -114,7 +114,7 @@ export const sendMessage = async (groupId, content, participant, token, setToken
       participant: participant ? { id: participant.id, name: participant.name } : null,
     };
 
-    const response = await axios.post(`${myConfig.apiUrl}/send_message`, payload, {
+    const response = await axios.post(`${myConfig.apiUrl}/send-message`, payload, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
