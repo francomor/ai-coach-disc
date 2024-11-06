@@ -8,6 +8,7 @@ import Avatar from "@mui/material/Avatar";
 import Container from "@mui/material/Container";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
 import { Menu, MenuItem, Modal, Button, List, ListItem, ListItemText, Tabs, Tab } from "@mui/material";
 import { logMeOut, fetchFileHistory, uploadFile } from "../../helpers";
 
@@ -163,9 +164,9 @@ const NavBar = ({
             <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
               My Files
             </Typography>
-            <Button onClick={() => setOpenFileModal(false)} variant="outlined" size="small">
-              Close
-            </Button>
+            <IconButton onClick={() => setOpenFileModal(false)} aria-label="close">
+              <CloseIcon />
+            </IconButton>
           </Box>
 
           <Tabs value={activeTab} onChange={handleTabChange} aria-label="User Group Tabs">
