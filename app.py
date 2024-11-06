@@ -206,6 +206,15 @@ def send_message():
         if not group_id or not content:
             return jsonify({"msg": "Bad payload"}), 400
 
+        # Check if the user has an uploaded file for this group
+        user_group_file = (
+            db.session.query(UserGroupFile)
+            .filter_by(user_id=user_id, user_group_id=group_id)
+            .first()
+        )
+        if not user_group_file:
+            return jsonify({"msg": "No file uploaded for this group"}), 403
+
         participant_id = participant.get("id") if participant else None
         participant_name = participant.get("name") if participant else "AI"
 
