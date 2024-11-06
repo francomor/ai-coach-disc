@@ -423,6 +423,8 @@ def upload_file():
 def file_history():
     user_id = get_jwt_identity()
     user_group_id = request.args.get("user_group_id", type=int)
+    if not user_group_id:
+        return jsonify({"msg": "User group ID is required"}), 400
 
     user_group = (
         session.query(UserGroup)
