@@ -49,7 +49,7 @@ const Login = ({ setToken }) => {
     <div className="login-page">
       <div className="login-left">
         <div className="login-box">
-          <img src={`${process.env.PUBLIC_URL}/thomas_logo.png`} alt="Thomas Logo" className="login-logo" />
+          <img src={`${process.env.PUBLIC_URL}/thomas_logo.png`} alt="Logo de Thomas" className="login-logo" />
           <form onSubmit={handleSubmit} className="login-form">
             <div className="login-user-input">
               <label htmlFor="username" className="login-label">
@@ -59,29 +59,29 @@ const Login = ({ setToken }) => {
                 type="text"
                 id="username"
                 name="username"
-                placeholder="Enter your email"
+                placeholder="Ingresa tu email"
                 className={`login-input ${!isEmailValid ? "invalid" : ""}`}
-                aria-label="Username"
+                aria-label="Email"
                 value={userNameValue}
                 onChange={handleEmailChange}
               />
             </div>
             <div className="login-user-input">
               <label htmlFor="password" className="login-label">
-                Password
+                Contraseña
               </label>
               <input
                 type="password"
                 id="password"
                 name="password"
-                placeholder="Enter your password"
+                placeholder="Ingresa tu contraseña"
                 className={`login-input ${!isPasswordValid ? "invalid" : ""}`}
-                aria-label="Password"
+                aria-label="Contraseña"
                 value={passwordValue}
                 onChange={handlePasswordChange}
               />
             </div>
-            <input type="submit" value="Log in" className="login-btn-submit" />
+            <input type="submit" value="Iniciar sesión" className="login-btn-submit" />
             <div className="login-error">{errorValue}</div>
           </form>
         </div>
@@ -89,10 +89,10 @@ const Login = ({ setToken }) => {
       <div className="login-right">
         <div className="login-description">
           <p>AI COACH DISC</p>
-          <h1>Chat with an AI-powered coach to explore your own DISC profile and those of your team members</h1>
+          <h1>Chatea con un coach impulsado por IA para explorar tu propio perfil DISC y el de los miembros de tu equipo</h1>
           <p>
-            Gain insights into behavioral styles, motivations, and effective communication strategies tailored to foster
-            collaboration and growth.
+            Obtén información sobre estilos de comportamiento, motivaciones y estrategias de comunicación efectivas
+            diseñadas para fomentar la colaboración y el crecimiento.
           </p>
         </div>
       </div>

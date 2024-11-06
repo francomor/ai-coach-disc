@@ -8,7 +8,7 @@ const Message = ({ userType, message, isErrorMessage, participantName }) => {
   return (
     <div className={`message-container ${messageTypeClass} ${errorMessageClass}`}>
       {participantName && userType !== "system" && <div className="message-participant-name">{participantName}</div>}
-      <div className="message">{message}</div>
+      <div className="message">{isErrorMessage ? "Error: " + message : message}</div>
     </div>
   );
 };

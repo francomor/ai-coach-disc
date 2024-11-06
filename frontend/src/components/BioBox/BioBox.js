@@ -12,7 +12,7 @@ const BioBox = () => {
       <div className="bio-box">
         <Avatar sx={{ width: { xs: 45, md: 45 }, height: { xs: 45, md: 45 } }} />
         <div className="character-info">
-          <div className="character-name">No participants</div>
+          <div className="character-name">Sin participantes</div>
         </div>
       </div>
     );

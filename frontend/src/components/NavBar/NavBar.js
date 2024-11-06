@@ -29,8 +29,8 @@ const NavBar = ({
   const navigate = useNavigate();
 
   const settings = [
-    { text: "My Files", onClick: () => setOpenFileModal(true) },
-    { text: "Logout", onClick: () => logMeOut(accessToken, removeToken) },
+    { text: "Mis archivos", onClick: () => setOpenFileModal(true) },
+    { text: "Cerrar sesión", onClick: () => logMeOut(accessToken, removeToken) },
   ];
 
   const handleOpenUserMenu = (event) => {
@@ -97,11 +97,11 @@ const NavBar = ({
                   onClick={handleLogoClick}
                   sx={{ p: 0, marginLeft: { xs: "0", sm: "0", md: "15px" } }}
                   disabled={isChatSelectionNavigationDisabled}
-                  aria-label="AI Coach Logo - Home"
+                  aria-label="Logo AI Coach - Inicio"
                 >
                   <img
                     src={`${process.env.PUBLIC_URL}/thomas_logo.png`}
-                    alt="AI Coach Logo"
+                    alt="Logo AI Coach"
                     style={{ width: "148px", height: "31px", marginRight: "1rem" }}
                   />
                 </IconButton>
@@ -117,7 +117,7 @@ const NavBar = ({
               </Typography>
             </Box>
             <Box sx={{ flexGrow: 0, padding: { xs: "0 5px 0 55px;", sm: "0 5px 0 55px;", md: "0 5px 0 103px;" } }}>
-              <Tooltip title="Open settings">
+              <Tooltip title="Abrir configuración">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                   <Avatar alt={user.name} src="/static/images/avatar/2.jpg" />
                 </IconButton>
@@ -162,14 +162,14 @@ const NavBar = ({
         >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-              My Files
+              Mis archivos
             </Typography>
-            <IconButton onClick={() => setOpenFileModal(false)} aria-label="close">
+            <IconButton onClick={() => setOpenFileModal(false)} aria-label="cerrar">
               <CloseIcon />
             </IconButton>
           </Box>
 
-          <Tabs value={activeTab} onChange={handleTabChange} aria-label="User Group Tabs">
+          <Tabs value={activeTab} onChange={handleTabChange} aria-label="Pestañas de grupo de usuario">
             {groups.map((group, index) => (
               <Tab key={group.id} label={group.name} />
             ))}
@@ -185,7 +185,7 @@ const NavBar = ({
             />
             <label htmlFor="upload-file">
               <Button variant="outlined" component="span">
-                Choose File
+                Elegir archivo
               </Button>
             </label>
             <Typography
@@ -197,22 +197,22 @@ const NavBar = ({
                 whiteSpace: "nowrap",
               }}
             >
-              {selectedFile ? selectedFile.name : "No file chosen"}
+              {selectedFile ? selectedFile.name : "Ningún archivo seleccionado"}
             </Typography>
             <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
-              Upload PDF
+              Subir PDF
             </Button>
           </Box>
 
           <Typography variant="subtitle1" sx={{ mt: 3 }}>
-            Recent Uploads for {groups[activeTab].name}
+            Subidas recientes para {groups[activeTab].name}
           </Typography>
           <List>
             {(fileHistory[groups[activeTab].id] || []).map((file, index) => (
               <ListItem key={index}>
                 <ListItemText
                   primary={file.file_name}
-                  secondary={`Uploaded at ${new Date(file.uploaded_at).toLocaleString()}`}
+                  secondary={`Subido el ${new Date(file.uploaded_at).toLocaleString()}`}
                 />
               </ListItem>
             ))}

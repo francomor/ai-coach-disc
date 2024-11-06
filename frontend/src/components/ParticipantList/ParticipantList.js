@@ -52,7 +52,7 @@ const ParticipantList = ({ accessToken, groupId, participants = [] }) => {
     <div className={`participant-list-container ${open ? "expanded" : "collapsed"}`}>
       {/* Header */}
       <div className={`header ${open ? "header-expanded" : "header-collapsed"}`}>
-        {(isMobile || open) && <span className="header-title">Participants</span>}
+        {(isMobile || open) && <span className="header-title">Participantes</span>}
         <button onClick={handleToggle} className="toggle-button">
           {isMobile ? (
             open ? (

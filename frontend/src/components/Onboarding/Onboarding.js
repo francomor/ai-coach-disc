@@ -55,7 +55,7 @@ const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
         groups={groups}
       />
       <div className="onboarding-container">
-        <h2>Onboarding</h2>
+        <h2>Tu rol en la empresa</h2>
         <form className="onboarding-form" onSubmit={(e) => e.preventDefault()}>
           {questions.map((q) => (
             <div key={q.id} className="onboarding-input-group">
@@ -72,7 +72,7 @@ const Onboarding = ({ onComplete, accessToken, user, token, groups }) => {
             </div>
           ))}
           <button type="button" onClick={handleSubmit} className="onboarding-submit-button" disabled={isSubmitDisabled}>
-            Submit
+            Enviar
           </button>
         </form>
       </div>

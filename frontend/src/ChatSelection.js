@@ -39,8 +39,8 @@ const ChatSelection = ({ groups, user, token }) => {
       />
       <div className="chat-selection-container">
         <div className="welcome-container">
-          <h2 className="welcome-title">Welcome!</h2>
-          <h2 className="select-text">Select a coaching model to start your journey:</h2>
+          <h2 className="welcome-title">¡Bienvenido!</h2>
+          <h2 className="select-text">Selecciona un modelo de coaching para comenzar:</h2>
         </div>
         <div className="group-container">
           {groups.map((group) => (
@@ -49,7 +49,7 @@ const ChatSelection = ({ groups, user, token }) => {
               <h3 className="group-name">{group.name}</h3>
               <Link to={`/chat/group/${group.id}`}>
                 <button className="chat-button">
-                  <span className="button-text">Go to chat</span>
+                  <span className="button-text">Ir al chat</span>
                   <span className="button-icon">&gt;</span> {/* ">" symbol */}
                 </button>
               </Link>

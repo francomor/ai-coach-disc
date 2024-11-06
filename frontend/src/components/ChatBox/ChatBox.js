@@ -115,7 +115,7 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
   return (
     <div className="chat-box-container">
       <div className="chat-box-messages" ref={messagesContainerRef} onScroll={handleScroll}>
-        {isLoadingMore && <div className="loading-more">Loading more messages...</div>}
+        {isLoadingMore && <div className="loading-more">Cargando más mensajes...</div>}
         {chatMessages.map((messageChat, index) => (
           <Message
             key={index}
@@ -126,7 +126,7 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
           />
         ))}
 
-        {isThinking && <Message userType="bot" message="Thinking..." />}
+        {isThinking && <Message userType="bot" message="Pensando..." />}
 
         <div ref={messagesEndRef} />
       </div>
@@ -135,7 +135,7 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
           type="text"
           className="input-text"
           ref={inputRef}
-          placeholder="Type your message..."
+          placeholder="Escribe tu mensaje..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           disabled={isThinking}
