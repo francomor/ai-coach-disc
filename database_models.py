@@ -82,7 +82,6 @@ class Participant(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
     name = Column(String(100), nullable=False)
-    role_document = Column(Text, nullable=True)
 
     user = relationship("User", back_populates="participants")
     group = relationship("Group", back_populates="participants")

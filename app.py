@@ -320,7 +320,6 @@ def get_user_groups():
                     {
                         "id": p.id,
                         "name": p.name,
-                        "roleDocument": p.role_document,
                     }
                     for p in participants
                 ],
@@ -463,6 +462,76 @@ def file_history():
     ]
 
     return jsonify(history)
+
+
+@app.route("/add-participant", methods=["POST"])
+@jwt_required()
+def add_participant():
+    user_id = get_jwt_identity()
+    data = request.json
+
+    # Validate required fields
+    group_id = data.get("groupId")
+    name = data.get("name")
+
+    if not group_id or not name:
+        return jsonify({"msg": "Group ID and name are required"}), 400
+
+    # Validate name length
+    if len(name) < 2 or len(name) > 20:
+        return (
+            jsonify({"msg": "Participant name must be between 2 and 20 characters"}),
+            400,
+        )
+
+    # Check if group exists and belongs to the user
+    user_group = (
+        db.session.query(UserGroup)
+        .filter_by(user_id=user_id, group_id=group_id)
+        .first()
+    )
+    if not user_group:
+        return jsonify({"msg": "Group not found or unauthorized"}), 403
+
+    # Create and save the new participant
+    new_participant = Participant(
+        user_id=user_id,
+        group_id=group_id,
+        name=name,
+    )
+    db.session.add(new_participant)
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "msg": "Participant added successfully",
+                "participant": {"id": new_participant.id, "name": new_participant.name},
+            }
+        ),
+        201,
+    )
+
+
+@app.route("/participants/<int:group_id>", methods=["GET"])
+@jwt_required()
+def get_participants(group_id):
+    user_id = get_jwt_identity()
+
+    # Verify the user is part of the group
+    user_group = (
+        db.session.query(UserGroup)
+        .filter_by(user_id=user_id, group_id=group_id)
+        .first()
+    )
+    if not user_group:
+        return jsonify({"msg": "Group not found or unauthorized"}), 403
+
+    # Retrieve participants
+    participants = db.session.query(Participant).filter_by(group_id=group_id).all()
+    participants_data = [{"id": p.id, "name": p.name} for p in participants]
+
+    return jsonify({"participants": participants_data})
 
 
 if __name__ == "__main__":

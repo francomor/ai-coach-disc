@@ -190,3 +190,31 @@ export const uploadFile = async (token, file, userGroupId) => {
     throw error;
   }
 };
+
+export const addParticipant = async (token, groupId, name) => {
+  try {
+    const response = await axios.post(
+      `${myConfig.apiUrl}/add-participant`,
+      { groupId, name },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error adding participant:", error);
+    throw error;
+  }
+};
+
+export const fetchParticipants = async (token, groupId) => {
+  try {
+    const response = await axios.get(`${myConfig.apiUrl}/participants/${groupId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.participants;
+  } catch (error) {
+    console.error("Error fetching participants:", error);
+    throw error;
+  }
+};

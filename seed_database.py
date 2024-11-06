@@ -41,35 +41,30 @@ participants_data = [
         "user_id": 1,
         "group_id": 1,
         "name": "Lauren",
-        "role_document": "DISC Coach-specific document for Lauren",
     },
     {
         "id": 2,
         "user_id": 1,
         "group_id": 1,
         "name": "Donnie",
-        "role_document": "DISC Coach-specific document for Donnie",
     },
     {
         "id": 3,
         "user_id": 2,
         "group_id": 1,
         "name": "Jamal",
-        "role_document": "DISC Coach-specific document for Jamal",
     },
     {
         "id": 4,
         "user_id": 1,
         "group_id": 2,
         "name": "Shonda",
-        "role_document": "HPTI Coach-specific document for Shonda",
     },
     {
         "id": 5,
         "user_id": 1,
         "group_id": 2,
         "name": "Lauren",
-        "role_document": "HPTI Coach-specific document for Lauren",
     },
 ]
 
@@ -149,7 +144,6 @@ def populate_tables():
             user_id=participant_data["user_id"],
             group_id=participant_data["group_id"],
             name=participant_data["name"],
-            role_document=participant_data["role_document"],
         )
         session.add(new_participant)
 
