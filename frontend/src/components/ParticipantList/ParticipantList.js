@@ -13,13 +13,14 @@ import {
   TextField,
   IconButton,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
 import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import { ChatContext } from "../../contexts/chat";
-import { addParticipant, fetchParticipants, editParticipant } from "../../helpers"; // Import helper functions
+import { addParticipant, fetchParticipants, editParticipant } from "../../helpers";
 import "./ParticipantList.css";
 
 const ParticipantList = ({ accessToken, groupId }) => {
@@ -157,11 +158,6 @@ const ParticipantList = ({ accessToken, groupId }) => {
           )}
         </button>
       </div>
-
-      <Button variant="contained" onClick={() => setDialogOpen(true)}>
-        Agregar participante
-      </Button>
-
       {(!isMobile || open) && (
         <List>
           {participants.map((participant) => (
@@ -185,6 +181,19 @@ const ParticipantList = ({ accessToken, groupId }) => {
               </IconButton>
             </ListItem>
           ))}
+
+          {/* Show Add Participant button only if participants count is less than 5 */}
+          {participants.length < 5 && (
+            <ListItem
+              key="add-participant"
+              className={`participant-item ${open ? "participant-item-expanded" : "participant-item-collapsed"}`}
+              style={{ display: "flex", justifyContent: "space-evenly", alignItems: "center", width: "100%" }}
+            >
+              <IconButton onClick={() => setDialogOpen(true)}>
+                <AddIcon />
+              </IconButton>
+            </ListItem>
+          )}
         </List>
       )}
 

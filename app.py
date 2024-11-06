@@ -493,6 +493,21 @@ def add_participant():
     if not user_group:
         return jsonify({"msg": "Group not found or unauthorized"}), 403
 
+    # Count the current number of participants in the group
+    participant_count = (
+        db.session.query(Participant).filter_by(group_id=group_id).count()
+    )
+
+    if participant_count >= 5:
+        return (
+            jsonify(
+                {
+                    "msg": "Participant limit reached. You cannot add more than 5 participants."
+                }
+            ),
+            400,
+        )
+
     # Create and save the new participant
     new_participant = Participant(
         user_id=user_id,
