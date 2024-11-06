@@ -100,7 +100,7 @@ const NavBar = ({
                   aria-label="Logo AI Coach - Inicio"
                 >
                   <img
-                    src={`${process.env.PUBLIC_URL}/thomas_logo.png`}
+                    src={`${process.env.PUBLIC_URL}/thomas_logo_mini.png`}
                     alt="Logo AI Coach"
                     style={{ width: "148px", height: "31px", marginRight: "1rem" }}
                   />
@@ -150,7 +150,7 @@ const NavBar = ({
               <img
                 src={`${process.env.PUBLIC_URL}/thomas_logo.png`}
                 alt="Logo AI Coach"
-                style={{ width: "345px", height: "73px" }}
+                style={{ width: "345px", height: "102px" }}
               />
             </IconButton>
           </Box>
