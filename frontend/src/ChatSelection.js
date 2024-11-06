@@ -24,7 +24,7 @@ const ChatSelection = ({ groups, user, token }) => {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [isMobile]);
 
   return (
     <>

@@ -81,7 +81,7 @@ const NavBar = ({
 
         fetchGroupFileHistory(groupId);
       } catch (error) {
-        console.error("Error uploading file:", error);
+        console.error("Error al subir archivo:", error);
       }
     }
   };
@@ -143,7 +143,20 @@ const NavBar = ({
             </Box>
           </Toolbar>
         </Container>
-      </AppBar>
+        {usebigLogo && (
+        <Box display="flex" justifyContent="center">
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton onClick={handleLogoClick} sx={{ p: 0 }} disabled={isChatSelectionNavigationDisabled}>
+              <img
+                src={`${process.env.PUBLIC_URL}/thomas_logo.png`}
+                alt="Logo AI Coach"
+                style={{ width: "345px", height: "73px" }}
+              />
+            </IconButton>
+          </Box>
+        </Box>
+        )}
+    </AppBar>
 
       {/* Modal for My Files */}
       <Modal open={openFileModal} onClose={() => setOpenFileModal(false)}>
