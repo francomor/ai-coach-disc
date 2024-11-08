@@ -159,9 +159,9 @@ export const sendMessage = async (groupId, content, participant, token, setToken
   }
 };
 
-export const fetchFileHistory = async (token, userGroupId) => {
+export const fetchGroupFileHistory = async (token, userGroupId) => {
   try {
-    const response = await axios.get(`${myConfig.apiUrl}/file-history`, {
+    const response = await axios.get(`${myConfig.apiUrl}/group/file-history`, {
       headers: { Authorization: `Bearer ${token}` },
       params: { user_group_id: userGroupId },
     });
@@ -172,13 +172,13 @@ export const fetchFileHistory = async (token, userGroupId) => {
   }
 };
 
-export const uploadFile = async (token, file, userGroupId) => {
+export const uploadGroupFile = async (token, file, userGroupId) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("user_group_id", userGroupId);
 
   try {
-    const response = await axios.post(`${myConfig.apiUrl}/upload-file`, formData, {
+    const response = await axios.post(`${myConfig.apiUrl}/group/upload-file`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
@@ -190,11 +190,42 @@ export const uploadFile = async (token, file, userGroupId) => {
     throw error;
   }
 };
+export const fetchParticipantFileHistory = async (token, participantId) => {
+  try {
+    const response = await axios.get(`${myConfig.apiUrl}/participants/file-history`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { participant_id: participantId },
+    });
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error("Error fetching participant file history:", error);
+    return [];
+  }
+};
+
+export const uploadParticipantFile = async (token, file, participantId) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("participant_id", participantId);
+
+  try {
+    const response = await axios.post(`${myConfig.apiUrl}/participants/upload-file`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading participant file:", error);
+    throw error;
+  }
+};
 
 export const addParticipant = async (token, groupId, name) => {
   try {
     const response = await axios.post(
-      `${myConfig.apiUrl}/add-participant`,
+      `${myConfig.apiUrl}/participants/add`,
       { groupId, name },
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -222,7 +253,7 @@ export const fetchParticipants = async (token, groupId) => {
 export const editParticipant = async (token, participantId, name) => {
   try {
     const response = await axios.put(
-      `${myConfig.apiUrl}/edit-participant`,
+      `${myConfig.apiUrl}/participants/edit`,
       { participantId, name },
       {
         headers: { Authorization: `Bearer ${token}` },

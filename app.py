@@ -22,10 +22,12 @@ from werkzeug.utils import secure_filename
 from database_models import (
     DB_URI,
     Base,
+    FileStorage,
     Group,
     Message,
     OnboardingAnswer,
     Participant,
+    ParticipantFile,
     Question,
     User,
     UserGroup,
@@ -372,13 +374,11 @@ def complete_onboarding():
     return jsonify({"msg": "Onboarding complete"}), 200
 
 
-@app.route("/upload-file", methods=["POST"])
+@app.route("/group/upload-file", methods=["POST"])
 @jwt_required()
-def upload_file():
+def upload_group_file():
     user_id = get_jwt_identity()
-    user_group_id = request.form.get(
-        "user_group_id"
-    )  # UserGroup ID should be provided in the form data
+    user_group_id = request.form.get("user_group_id")
 
     # Check if the user group exists for this user
     user_group = (
@@ -389,19 +389,16 @@ def upload_file():
     if not user_group:
         return jsonify({"msg": "User group not found or unauthorized"}), 404
 
-    # Retrieve the file from the request
     if "file" not in request.files:
         return jsonify({"msg": "No file provided"}), 400
 
     file = request.files["file"]
 
-    # Ensure the file has a valid PDF extension
     if file.filename == "" or not file.filename.endswith(".pdf"):
         return jsonify({"msg": "Invalid file type; only PDFs allowed"}), 400
 
-    # Secure the filename and save the file
     original_filename = secure_filename(file.filename)
-    file_uuid = uuid.uuid4().hex  # Generate a unique UUID for the file
+    file_uuid = uuid.uuid4().hex
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id))
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
@@ -409,15 +406,18 @@ def upload_file():
     file_path = os.path.join(user_folder, f"{file_uuid}.pdf")
     file.save(file_path)
 
-    # Save file information to the database
-    file_url = f"{user_folder}/{file_uuid}.pdf"
-    new_file = UserGroupFile(
+    new_file_storage = FileStorage(
+        file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
+    )
+    session.add(new_file_storage)
+    session.commit()
+
+    new_user_group_file = UserGroupFile(
         user_group_id=user_group_id,
         user_id=user_id,
-        file_name=original_filename,  # Save the original file name
-        file_url=file_url,  # Save the path with UUID
+        file_storage_id=new_file_storage.id,
     )
-    session.add(new_file)
+    session.add(new_user_group_file)
     session.commit()
 
     return (
@@ -426,7 +426,7 @@ def upload_file():
     )
 
 
-@app.route("/file-history", methods=["GET"])
+@app.route("/group/file-history", methods=["GET"])
 @jwt_required()
 def file_history():
     user_id = get_jwt_identity()
@@ -442,21 +442,23 @@ def file_history():
     if not user_group:
         return jsonify({"msg": "User group not found or unauthorized"}), 404
 
-    # Fetch the last 3 files for this user group
     files = (
         session.query(UserGroupFile)
-        .filter_by(user_group_id=user_group_id, user_id=user_id)
-        .order_by(UserGroupFile.uploaded_at.desc())
+        .join(FileStorage, UserGroupFile.file_storage_id == FileStorage.id)
+        .filter(
+            UserGroupFile.user_group_id == user_group_id,
+            UserGroupFile.user_id == user_id,
+        )
+        .order_by(FileStorage.uploaded_at.desc())
         .limit(3)
         .all()
     )
 
-    # Return file history for this specific group, including the original file name
     history = [
         {
-            "file_url": file.file_url,
-            "file_name": file.file_name,
-            "uploaded_at": file.uploaded_at,
+            "file_url": file.file_storage.file_url,
+            "file_name": file.file_storage.file_name,
+            "uploaded_at": file.file_storage.uploaded_at,
         }
         for file in files
     ]
@@ -464,7 +466,89 @@ def file_history():
     return jsonify(history)
 
 
-@app.route("/add-participant", methods=["POST"])
+@app.route("/participants/upload-file", methods=["POST"])
+@jwt_required()
+def upload_participant_file():
+    user_id = get_jwt_identity()
+    participant_id = request.form.get("participant_id")
+
+    participant = (
+        session.query(Participant).filter_by(id=participant_id, user_id=user_id).first()
+    )
+    if not participant:
+        return jsonify({"msg": "Participant not found or unauthorized"}), 404
+
+    if "file" not in request.files:
+        return jsonify({"msg": "No file provided"}), 400
+
+    file = request.files["file"]
+
+    if file.filename == "" or not file.filename.endswith(".pdf"):
+        return jsonify({"msg": "Invalid file type; only PDFs allowed"}), 400
+
+    original_filename = secure_filename(file.filename)
+    file_uuid = uuid.uuid4().hex
+    user_folder = os.path.join(
+        app.config["UPLOAD_FOLDER"], str(user_id), str(participant_id)
+    )
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
+
+    file_path = os.path.join(user_folder, f"{file_uuid}.pdf")
+    file.save(file_path)
+
+    new_file_storage = FileStorage(
+        file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
+    )
+    session.add(new_file_storage)
+    session.commit()
+
+    new_participant_file = ParticipantFile(
+        participant_id=participant_id, file_storage_id=new_file_storage.id
+    )
+    session.add(new_participant_file)
+    session.commit()
+
+    return (
+        jsonify({"msg": "File uploaded successfully", "filename": original_filename}),
+        200,
+    )
+
+
+@app.route("/participants/file-history", methods=["GET"])
+@jwt_required()
+def participant_file_history():
+    user_id = get_jwt_identity()
+    participant_id = request.args.get("participant_id", type=int)
+
+    participant = (
+        session.query(Participant).filter_by(id=participant_id, user_id=user_id).first()
+    )
+    if not participant:
+        return jsonify({"msg": "Participant not found or unauthorized"}), 404
+
+    files = (
+        session.query(ParticipantFile)
+        .join(FileStorage, ParticipantFile.file_storage_id == FileStorage.id)
+        .filter(ParticipantFile.participant_id == participant_id)
+        .order_by(FileStorage.uploaded_at.desc())
+        .limit(3)
+        .all()
+    )
+
+    history = [
+        {
+            "file_url": file.file_storage.file_url,
+            "file_name": file.file_storage.file_name,
+            "uploaded_at": file.file_storage.uploaded_at,
+        }
+        for file in files
+    ]
+
+    return jsonify(history)
+
+
+@app.route("/participants/add", methods=["POST"])
 @jwt_required()
 def add_participant():
     user_id = get_jwt_identity()
@@ -549,7 +633,7 @@ def get_participants(group_id):
     return jsonify({"participants": participants_data})
 
 
-@app.route("/edit-participant", methods=["PUT"])
+@app.route("/participants/edit", methods=["PUT"])
 @jwt_required()
 def edit_participant():
     user_id = get_jwt_identity()

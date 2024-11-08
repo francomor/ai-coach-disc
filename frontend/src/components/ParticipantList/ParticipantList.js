@@ -12,6 +12,8 @@ import {
   DialogTitle,
   TextField,
   IconButton,
+  Box,
+  Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -20,18 +22,26 @@ import EditIcon from "@mui/icons-material/Edit";
 import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import { ChatContext } from "../../contexts/chat";
-import { addParticipant, fetchParticipants, editParticipant } from "../../helpers";
+import {
+  addParticipant,
+  fetchParticipants,
+  editParticipant,
+  fetchParticipantFileHistory,
+  uploadParticipantFile,
+} from "../../helpers";
 import "./ParticipantList.css";
 
 const ParticipantList = ({ accessToken, groupId }) => {
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(false); // To check if we're editing or adding
   const [currentParticipantId, setCurrentParticipantId] = useState(null);
   const [participantName, setParticipantName] = useState("");
   const [nameError, setNameError] = useState("");
   const [participants, setParticipants] = useState([]);
+  const [fileHistory, setFileHistory] = useState({});
+  const [selectedFile, setSelectedFile] = useState(null);
   const { selectedParticipant } = useContext(ChatContext)[0];
   const dispatch = useContext(ChatContext)[1];
 
@@ -102,9 +112,13 @@ const ParticipantList = ({ accessToken, groupId }) => {
     }
 
     try {
-      await addParticipant(accessToken, groupId, participantName);
+      const response = await addParticipant(accessToken, groupId, participantName);
+      if (selectedFile) {
+        await uploadParticipantFile(accessToken, selectedFile, response.participant.id);
+      }
       setDialogOpen(false);
       setParticipantName("");
+      setSelectedFile(null);
       fetchParticipantsList();
     } catch (error) {
       console.error("Error adding participant:", error);
@@ -118,6 +132,9 @@ const ParticipantList = ({ accessToken, groupId }) => {
 
     try {
       await editParticipant(accessToken, currentParticipantId, participantName);
+      if (selectedFile) {
+        await handleFileUpload();
+      }
       setDialogOpen(false);
       setEditMode(false);
       setParticipantName("");
@@ -127,16 +144,52 @@ const ParticipantList = ({ accessToken, groupId }) => {
     }
   };
 
-  const openEditDialog = (participant) => {
-    setEditMode(true);
-    setCurrentParticipantId(participant.id);
-    setParticipantName(participant.name);
+  const openParticipantDialog = (participant = null) => {
+    if (participant) {
+      setEditMode(true);
+      setCurrentParticipantId(participant.id);
+      setParticipantName(participant.name);
+      fetchFileHistoryForParticipant(participant.id);
+    } else {
+      setEditMode(false);
+      setParticipantName("");
+      setSelectedFile(null);
+      setCurrentParticipantId(null);
+    }
     setDialogOpen(true);
   };
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
       editMode ? handleEditParticipant() : handleAddParticipant();
+    }
+  };
+
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const fetchFileHistoryForParticipant = async (participantId) => {
+    try {
+      const history = await fetchParticipantFileHistory(accessToken, participantId);
+      setFileHistory((prevHistory) => ({
+        ...prevHistory,
+        [participantId]: history,
+      }));
+    } catch (error) {
+      console.error("Error fetching participant file history:", error);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (selectedFile && currentParticipantId) {
+      try {
+        await uploadParticipantFile(accessToken, selectedFile, currentParticipantId);
+        setSelectedFile(null);
+        fetchFileHistoryForParticipant(currentParticipantId);
+      } catch (error) {
+        console.error("Error uploading file:", error);
+      }
     }
   };
 
@@ -176,7 +229,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
                   <ListItemText primary={<span className="participant-name">{participant.name}</span>} />
                 </div>
               )}
-              <IconButton onClick={() => openEditDialog(participant)}>
+              <IconButton onClick={() => openParticipantDialog(participant)}>
                 <EditIcon />
               </IconButton>
             </ListItem>
@@ -189,7 +242,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
               className={`participant-item ${open ? "participant-item-expanded" : "participant-item-collapsed"}`}
               style={{ display: "flex", justifyContent: "space-evenly", alignItems: "center", width: "100%" }}
             >
-              <IconButton onClick={() => setDialogOpen(true)}>
+              <IconButton onClick={() => openParticipantDialog()}>
                 <AddIcon />
               </IconButton>
             </ListItem>
@@ -210,6 +263,48 @@ const ParticipantList = ({ accessToken, groupId }) => {
             error={!!nameError}
             helperText={nameError}
           />
+          <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2 }}>
+            <input
+              accept="application/pdf"
+              id="upload-file"
+              type="file"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            <label htmlFor="upload-file">
+              <Button variant="outlined" component="span">
+                Choose File
+              </Button>
+            </label>
+            <Typography
+              variant="body2"
+              sx={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            >
+              {selectedFile ? selectedFile.name : "No file selected"}
+            </Typography>
+            {editMode && (
+              <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
+                Upload PDF
+              </Button>
+            )}
+          </Box>
+          {editMode && (
+            <>
+              <Typography variant="subtitle1" sx={{ mt: 3 }}>
+                Recent Uploads for Participant
+              </Typography>
+              <List>
+                {(fileHistory[currentParticipantId] || []).map((file, index) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={file.file_name}
+                      secondary={`Uploaded on ${new Date(file.uploaded_at).toLocaleString()}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>

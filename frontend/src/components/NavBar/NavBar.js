@@ -10,7 +10,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import { Menu, MenuItem, Modal, Button, List, ListItem, ListItemText, Tabs, Tab } from "@mui/material";
-import { logMeOut, fetchFileHistory, uploadFile } from "../../helpers";
+import { logMeOut, uploadGroupFile, fetchGroupFileHistory } from "../../helpers";
 
 const NavBar = ({
   user,
@@ -47,8 +47,8 @@ const NavBar = ({
     }
   };
 
-  const fetchGroupFileHistory = async (groupId) => {
-    const history = await fetchFileHistory(accessToken, groupId);
+  const handleFetchGroupFileHistory = async (groupId) => {
+    const history = await fetchGroupFileHistory(accessToken, groupId);
     setFileHistory((prevHistory) => ({
       ...prevHistory,
       [groupId]: history,
@@ -58,14 +58,14 @@ const NavBar = ({
   useEffect(() => {
     if (openFileModal) {
       const currentGroupId = groups[activeTab].id;
-      fetchGroupFileHistory(currentGroupId);
+      handleFetchGroupFileHistory(currentGroupId);
     }
   }, [openFileModal, activeTab, accessToken, groups]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
     const groupId = groups[newValue].id;
-    fetchGroupFileHistory(groupId);
+    handleFetchGroupFileHistory(groupId);
   };
 
   const handleFileChange = (event) => {
@@ -76,10 +76,10 @@ const NavBar = ({
     const groupId = groups[activeTab].id;
     if (selectedFile && groupId) {
       try {
-        await uploadFile(accessToken, selectedFile, groupId);
+        await uploadGroupFile(accessToken, selectedFile, groupId);
         setSelectedFile(null);
 
-        fetchGroupFileHistory(groupId);
+        handleFetchGroupFileHistory(groupId);
       } catch (error) {
         console.error("Error al subir archivo:", error);
       }

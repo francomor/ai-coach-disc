@@ -14,7 +14,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.schema import ForeignKeyConstraint
 
 load_dotenv()
 
@@ -76,6 +75,29 @@ class Group(Base):
     participants = relationship("Participant", back_populates="group")
 
 
+class FileStorage(Base):
+    __tablename__ = "FileStorage"
+    id = Column(Integer, primary_key=True)
+    file_name = Column(String(255), nullable=False)  # Store the original file name
+    file_url = Column(String(255), nullable=False)  # Store the file path with UUID
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user_group_files = relationship("UserGroupFile", back_populates="file_storage")
+    participant_files = relationship("ParticipantFile", back_populates="file_storage")
+
+
+class ParticipantFile(Base):
+    __tablename__ = "ParticipantFiles"
+    id = Column(Integer, primary_key=True)
+    participant_id = Column(Integer, ForeignKey("Participants.id"), nullable=False)
+    file_storage_id = Column(Integer, ForeignKey("FileStorage.id"), nullable=False)
+
+    # Relationships
+    participant = relationship("Participant", back_populates="files")
+    file_storage = relationship("FileStorage", back_populates="participant_files")
+
+
 class Participant(Base):
     __tablename__ = "Participants"
     id = Column(Integer, primary_key=True)
@@ -83,32 +105,22 @@ class Participant(Base):
     group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
     name = Column(String(100), nullable=False)
 
+    # Relationships
     user = relationship("User", back_populates="participants")
     group = relationship("Group", back_populates="participants")
+    files = relationship("ParticipantFile", back_populates="participant")
 
 
 class UserGroupFile(Base):
     __tablename__ = "UserGroupFiles"
     id = Column(Integer, primary_key=True)
-    user_group_id = Column(Integer, nullable=False)
-    user_id = Column(Integer, nullable=False)
-    file_name = Column(String(255), nullable=False)  # Store the original file name
-    file_url = Column(String(255), nullable=False)  # Store the file path with UUID
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    user_group_id = Column(Integer, ForeignKey("UserGroups.group_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    file_storage_id = Column(Integer, ForeignKey("FileStorage.id"), nullable=False)
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["user_group_id", "user_id"],
-            ["UserGroups.group_id", "UserGroups.user_id"],
-        ),
-    )
-
-    user_group = relationship(
-        "UserGroup",
-        back_populates="files",
-        primaryjoin="and_(UserGroupFile.user_group_id == UserGroup.group_id, "
-        "UserGroupFile.user_id == UserGroup.user_id)",
-    )
+    # Relationships
+    user_group = relationship("UserGroup", back_populates="files")
+    file_storage = relationship("FileStorage", back_populates="user_group_files")
 
 
 class UserGroup(Base):

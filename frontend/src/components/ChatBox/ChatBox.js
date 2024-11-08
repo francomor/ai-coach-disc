@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useState, useMemo } from "react";
 import { ChatContext } from "../../contexts/chat";
 import "./ChatBox.css";
 import Message from "./Message/Message";
-import { sendMessage, fetchChatHistory, fetchFileHistory, uploadFile } from "../../helpers";
+import { sendMessage, fetchChatHistory, fetchGroupFileHistory, uploadGroupFile } from "../../helpers";
 import { Modal, Button, Snackbar, Alert } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -37,7 +37,7 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
   useEffect(() => {
     const checkFileHistory = async () => {
       try {
-        const history = await fetchFileHistory(accessToken, groupId);
+        const history = await fetchGroupFileHistory(accessToken, groupId);
         setHasFile(history.length > 0);
         if (history.length === 0) setShowUploadModal(true);
       } catch (error) {
@@ -121,10 +121,10 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
   const handleFileUpload = async () => {
     if (selectedFile && groupId) {
       try {
-        await uploadFile(accessToken, selectedFile, groupId);
+        await uploadGroupFile(accessToken, selectedFile, groupId);
         setSelectedFile(null);
 
-        const history = await fetchFileHistory(accessToken, groupId);
+        const history = await fetchGroupFileHistory(accessToken, groupId);
         setHasFile(history.length > 0);
         setShowUploadModal(false);
 
