@@ -273,32 +273,32 @@ const ParticipantList = ({ accessToken, groupId }) => {
             />
             <label htmlFor="upload-file">
               <Button variant="outlined" component="span">
-                Choose File
+                Elegir archivo
               </Button>
             </label>
             <Typography
               variant="body2"
               sx={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
             >
-              {selectedFile ? selectedFile.name : "No file selected"}
+              {selectedFile ? selectedFile.name : "No hay archivo seleccionado"}
             </Typography>
             {editMode && (
               <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
-                Upload PDF
+                Subir PDF
               </Button>
             )}
           </Box>
           {editMode && (
             <>
               <Typography variant="subtitle1" sx={{ mt: 3 }}>
-                Recent Uploads for Participant
+                Archivos recientes del participante
               </Typography>
               <List>
                 {(fileHistory[currentParticipantId] || []).map((file, index) => (
                   <ListItem key={index}>
                     <ListItemText
                       primary={file.file_name}
-                      secondary={`Uploaded on ${new Date(file.uploaded_at).toLocaleString()}`}
+                      secondary={`Subido el ${new Date(file.uploaded_at).toLocaleString()}`}
                     />
                   </ListItem>
                 ))}
