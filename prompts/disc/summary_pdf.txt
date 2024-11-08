@@ -1,0 +1,37 @@
+Basado en los JSON proporcionados, juntar la informacion en un solo JSON con el siguiente formato
+
+{
+	"Nombre_persona": "",
+	"Autoimagen": {
+		"Descripcion": "",
+		"Grafica III": {
+			"D": "",
+			"I": "",
+			"S": "",
+			"C": "",
+		}
+	},
+	"Automotivacion": "",
+	"Enfasis laboral": "",
+	"Palabras descriptivas": "",
+	"Como lo ven otros": {
+		"Descripcion": "",
+		"Grafica I": {
+			"D": "",
+			"I": "",
+			"S": "",
+			"C": "",
+		}
+	},
+	"Comportamiento bajo presion": {
+		"Descripcion": "",
+		"Grafica I": {
+			"D": "",
+			"I": "",
+			"S": "",
+			"C": "",
+		}
+	},
+	"Comentarios generales": "",
+	"Factores de motivacion": "",
+}

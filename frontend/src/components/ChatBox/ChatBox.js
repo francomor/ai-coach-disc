@@ -167,7 +167,7 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
           />
         ))}
 
-        {isThinking && <Message userType="bot" message="Pensando..." />}
+        {isThinking && <Message userType="bot" message="..." />}
 
         <div ref={messagesEndRef} />
       </div>

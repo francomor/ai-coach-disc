@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import bcrypt
 
 from database_models import (
@@ -5,6 +7,7 @@ from database_models import (
     Group,
     OnboardingAnswer,
     Participant,
+    PromptConfig,
     Question,
     User,
     UserGroup,
@@ -33,6 +36,27 @@ user_data = [
 groups_data = [
     {"id": 1, "name": "DISC Coach", "url_slug": "disc-coach", "image": "/disc.png"},
     {"id": 2, "name": "HPTI Coach", "url_slug": "hpti-coach", "image": "/hpti.png"},
+]
+
+prompts_folder = Path("prompts")
+disc_folder = prompts_folder / "disc"
+hpti_folder = prompts_folder / "hpti"
+
+prompts_configs_data = [
+    {
+        "id": 1,
+        "group_id": 1,
+        "prompt_chat": Path(disc_folder / "chat.txt").read_text(),
+        "prompt_gpt_vision": Path(disc_folder / "gpt_vision.txt").read_text(),
+        "prompt_summary_pdf": Path(disc_folder / "summary_pdf.txt").read_text(),
+    },
+    {
+        "id": 2,
+        "group_id": 2,
+        "prompt_chat": "Prompt for chat",
+        "prompt_gpt_vision": "Prompt for GPT Vision",
+        "prompt_summary_pdf": "Prompt for PDF summary",
+    },
 ]
 
 participants_data = [
@@ -136,6 +160,17 @@ def populate_tables():
             image=group["image"],
         )
         session.add(new_group)
+
+    # Add prompt configurations
+    for prompt_config in prompts_configs_data:
+        new_prompt_config = PromptConfig(
+            id=prompt_config["id"],
+            group_id=prompt_config["group_id"],
+            prompt_chat=prompt_config["prompt_chat"],
+            prompt_gpt_vision=prompt_config["prompt_gpt_vision"],
+            prompt_summary_pdf=prompt_config["prompt_summary_pdf"],
+        )
+        session.add(new_prompt_config)
 
     # Add participants
     for participant_data in participants_data:

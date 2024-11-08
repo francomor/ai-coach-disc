@@ -32,9 +32,8 @@ from database_models import (
     User,
     UserGroup,
     UserGroupFile,
-    session,
 )
-from model import predict
+from model import predict, process_pdf
 
 load_dotenv()
 
@@ -231,9 +230,10 @@ def send_message():
         db.session.add(new_user_message)
         db.session.commit()
 
-        # Generate assistant's response
+        # Generate assistant's response based on the group-specific prompt
+        processed_summary = user_group_file.processed_summary
         history = get_history(group_id, user_id, participant_id, limit=10)
-        response_content = predict(history, participant_name)
+        response_content = predict(history, group_id, processed_summary, db.session)
 
         new_participant_message = Message(
             user_id=user_id,
@@ -382,7 +382,7 @@ def upload_group_file():
 
     # Check if the user group exists for this user
     user_group = (
-        session.query(UserGroup)
+        db.session.query(UserGroup)
         .filter_by(user_id=user_id, group_id=user_group_id)
         .first()
     )
@@ -397,33 +397,36 @@ def upload_group_file():
     if file.filename == "" or not file.filename.endswith(".pdf"):
         return jsonify({"msg": "Invalid file type; only PDFs allowed"}), 400
 
-    original_filename = secure_filename(file.filename)
-    file_uuid = uuid.uuid4().hex
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id))
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
+    try:
+        original_filename, new_file_storage, summary = process_pdf(
+            file, user_folder, user_group.group_id, db.session
+        )
 
-    file_path = os.path.join(user_folder, f"{file_uuid}.pdf")
-    file.save(file_path)
+        # TODO: add a check to see if the file is DISC
 
-    new_file_storage = FileStorage(
-        file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
-    )
-    session.add(new_file_storage)
-    session.commit()
+        # Save file metadata
+        new_user_group_file = UserGroupFile(
+            user_group_id=user_group.group_id,
+            user_id=user_id,
+            file_storage_id=new_file_storage.id,
+            processed_summary=summary,
+        )
+        db.session.add(new_user_group_file)
+        db.session.commit()
 
-    new_user_group_file = UserGroupFile(
-        user_group_id=user_group_id,
-        user_id=user_id,
-        file_storage_id=new_file_storage.id,
-    )
-    session.add(new_user_group_file)
-    session.commit()
+        return (
+            jsonify(
+                {"msg": "File uploaded successfully", "filename": original_filename}
+            ),
+            200,
+        )
 
-    return (
-        jsonify({"msg": "File uploaded successfully", "filename": original_filename}),
-        200,
-    )
+    except Exception as e:
+        print(f"Error processing PDF: {e}")
+        return jsonify({"msg": "Failed to process PDF", "error": str(e)}), 500
 
 
 @app.route("/group/file-history", methods=["GET"])
@@ -435,7 +438,7 @@ def file_history():
         return jsonify({"msg": "User group ID is required"}), 400
 
     user_group = (
-        session.query(UserGroup)
+        db.session.query(UserGroup)
         .filter_by(user_id=user_id, group_id=user_group_id)
         .first()
     )
@@ -443,7 +446,7 @@ def file_history():
         return jsonify({"msg": "User group not found or unauthorized"}), 404
 
     files = (
-        session.query(UserGroupFile)
+        db.session.query(UserGroupFile)
         .join(FileStorage, UserGroupFile.file_storage_id == FileStorage.id)
         .filter(
             UserGroupFile.user_group_id == user_group_id,
@@ -473,7 +476,9 @@ def upload_participant_file():
     participant_id = request.form.get("participant_id")
 
     participant = (
-        session.query(Participant).filter_by(id=participant_id, user_id=user_id).first()
+        db.session.query(Participant)
+        .filter_by(id=participant_id, user_id=user_id)
+        .first()
     )
     if not participant:
         return jsonify({"msg": "Participant not found or unauthorized"}), 404
@@ -500,14 +505,14 @@ def upload_participant_file():
     new_file_storage = FileStorage(
         file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
     )
-    session.add(new_file_storage)
-    session.commit()
+    db.session.add(new_file_storage)
+    db.session.commit()
 
     new_participant_file = ParticipantFile(
         participant_id=participant_id, file_storage_id=new_file_storage.id
     )
-    session.add(new_participant_file)
-    session.commit()
+    db.session.add(new_participant_file)
+    db.session.commit()
 
     return (
         jsonify({"msg": "File uploaded successfully", "filename": original_filename}),
@@ -522,13 +527,15 @@ def participant_file_history():
     participant_id = request.args.get("participant_id", type=int)
 
     participant = (
-        session.query(Participant).filter_by(id=participant_id, user_id=user_id).first()
+        db.session.query(Participant)
+        .filter_by(id=participant_id, user_id=user_id)
+        .first()
     )
     if not participant:
         return jsonify({"msg": "Participant not found or unauthorized"}), 404
 
     files = (
-        session.query(ParticipantFile)
+        db.session.query(ParticipantFile)
         .join(FileStorage, ParticipantFile.file_storage_id == FileStorage.id)
         .filter(ParticipantFile.participant_id == participant_id)
         .order_by(FileStorage.uploaded_at.desc())

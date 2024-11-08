@@ -49,6 +49,7 @@ class OnboardingAnswer(Base):
     question_id = Column(Integer, ForeignKey("Questions.id"), nullable=False)
     answer = Column(Text, nullable=True)
 
+    # Relationships
     user = relationship("User", back_populates="onboarding_answers")
     question = relationship("Question")
 
@@ -60,9 +61,23 @@ class User(Base):
     name = Column(String(80), nullable=False)
     password = Column(String(255), nullable=False)
     onboarding_complete = Column(Boolean, default=False)
+
+    # Relationships
     user_groups = relationship("UserGroup", back_populates="user")
     participants = relationship("Participant", back_populates="user")
     onboarding_answers = relationship("OnboardingAnswer", back_populates="user")
+
+
+class PromptConfig(Base):
+    __tablename__ = "PromptConfigs"
+    id = Column(Integer, primary_key=True)
+    group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
+    prompt_chat = Column(Text, nullable=False)
+    prompt_gpt_vision = Column(Text, nullable=False)
+    prompt_summary_pdf = Column(Text, nullable=False)
+
+    # Relationships
+    group = relationship("Group", back_populates="prompt_configs")
 
 
 class Group(Base):
@@ -71,8 +86,11 @@ class Group(Base):
     name = Column(String(100), nullable=False)
     url_slug = Column(String(50), nullable=False)
     image = Column(String(255))
+
+    # Relationships
     user_groups = relationship("UserGroup", back_populates="group")
     participants = relationship("Participant", back_populates="group")
+    prompt_configs = relationship("PromptConfig", back_populates="group")
 
 
 class FileStorage(Base):
@@ -117,6 +135,7 @@ class UserGroupFile(Base):
     user_group_id = Column(Integer, ForeignKey("UserGroups.group_id"), nullable=False)
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     file_storage_id = Column(Integer, ForeignKey("FileStorage.id"), nullable=False)
+    processed_summary = Column(Text, nullable=True)
 
     # Relationships
     user_group = relationship("UserGroup", back_populates="files")
@@ -128,6 +147,7 @@ class UserGroup(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), primary_key=True)
     group_id = Column(Integer, ForeignKey("Groups.id"), primary_key=True)
 
+    # Relationships
     user = relationship("User", back_populates="user_groups")
     group = relationship("Group", back_populates="user_groups")
     files = relationship(
@@ -148,6 +168,7 @@ class Message(Base):
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+    # Relationships
     user = relationship("User")
     group = relationship("Group")
     participant = relationship("Participant")

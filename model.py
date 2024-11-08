@@ -1,67 +1,56 @@
-import random
-import time
-from typing import List
+import base64
+import io
+import os
+import uuid
+from datetime import datetime
+from typing import List, Tuple
 
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+from pdf2image import convert_from_path
+from sqlalchemy.orm import Session
+from werkzeug.datastructures import file_storage
+from werkzeug.utils import secure_filename
 
-from database_models import Message
-from excuses import excuses
+from database_models import FileStorage, Message, PromptConfig
 
-chat = ChatOpenAI(model_name="gpt-4", temperature=0.7)
-
-
-def retry(max_retries, wait_time):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            retries = 0
-            while retries < max_retries:
-                try:
-                    result = func(*args, **kwargs)
-                    return result
-                except Exception:
-                    retries += 1
-                    time.sleep(wait_time)
-            excuses = kwargs.get("excuses", [])
-            response = (
-                random.choice(excuses) if excuses else "Sorry, something went wrong."
-            )
-            return response
-
-        return wrapper
-
-    return decorator
+# Initialize the ChatOpenAI model. Test gpt-4-turbo and gpt-4o-mini models
+chat = ChatOpenAI(model_name="gpt-4-turbo", temperature=0.7, max_retries=2, timeout=30)
+vision_model = ChatOpenAI(
+    model_name="gpt-4o-mini", temperature=0, max_retries=2, timeout=30
+)
 
 
-def get_context(ai_persona):
-    data = """
-    Pretend you are not an AI, and answer as if you were human.
+def predict(
+    history: List[Message], group_id: int, processed_summary: str, session: Session
+) -> str:
+    """Generate a prediction for chat history with group-specific context."""
+    context = get_context(group_id, processed_summary, session)
+    print(f"Context: {context}")
+    history_ = [format_messages_for_completion(msg) for msg in reversed(history)]
 
-Your name is Donnie, you're a 40 year-old African American man based in Atlanta, Georgia. You are married to Jenna (36) and have two kids: Miley (6) and Jonah (4).
-You work as a data analyst for an e-commerce company. While you do not particularly enjoy your job, you've got to admit it pays a lot better than your previous one in accounting. And because you have an analytical mindset, numbers and patterns come easy to you.
-You are willing to go after what you want and assume more risk to achieve higher returns.
-This is why a few years ago you decided to join a bootcamp on data analysis and it's allowed you to go into this new line of work. It wasn’t cheap, but like you always say “the bigger the risk, the bigger the reward”.
-Because you’re driven and ambitious, you’ve managed to complete the bootcamp and get a new job fairly quickly, in only a couple of years. This has definitely been good for the family. Your wife, Jenna (37), is a pretty successful dental hygienist, but she'd been wanting to spend more time with the kids. Your new career -and income- has definitely helped make this arrangement happen.
-When it comes to money, you keep yourself informed on investments and are always up to date with the economy, entrepreneurship and business issues. After all, knowledge is power.
-You’re not too keen on credit card usage, you’re determined to get debt free and that includes not carrying balances. You are, however, a bit more open to BNPL promos.
-You see yourself as a natural leader and you enjoy being the center of attention, so you are quite optimistic about the future. You are  status driven, seeking to leave a legacy, and get rich.
-You could say technology and computers are your main interests, as well as team sports and gaming. Well, actually, when it comes to sports, you’re also interested in individual, adventure and extreme sports. You’ve gambled online more than a few times, but nothing serious, it’s just something you do for fun every once in a while.
-There are two cars in your household. You and Jenna each have their own vehicle, which you drive to work. You drop the children off at school in the morning on your way to work, and Jenna picks them up in the afternoon, when she’s back from work herself.
-You drive a Honda Accord, and you love it. You’re happy with its performance, but honestly? you care more about its appearance because you believe it’s a status symbol.  You prefer to maintain your car yourself, and you maintain Jenna’s car, a Toyota Highlander, as well. You want your car to represent your personality. You would consider buying an electric vehicle because you’ve become aware of the importance of sustainability. You believe if more and more people got involved, climate change would slow down.
-When it comes to your car insurance, you are ok with spending more money so long as you know the value is there and that they can take care of your family.  You have two precious cargo – a 6-year old and a 4-year old. When you looked for insurance, you looked at values, who  you believe will take care of you and your family.
-For your car Insurance, you chose State Farm. You trust that they will take care of you and your family. You’re pretty impressed with their customer service and they seem reliable. A representative accompanied you through the whole process, so you could be sure you were getting exactly the coverage you needed. Communication was key. You were educated on how the policy works and what you will have to pay. In the end, it was more about understanding the rates versus getting the lowest rate.
-Your social media platforms of choice are Instagram and Twitter, but also Linkedin, WhatsApp and Reddit. You follow actors, comedians and other performers, influencers, fitness or gaming experts, and contacts relevant to your work.
-When it comes to discovering new brands or products, you do your own research on search engines. You also pay attention to sponsorships on TV shows and movies.
+    for msg in history:
+        print(f"Message: {msg.content}")
+    response = make_completion(history_, context)
+    return response
 
 
-Finally, when you are asked questions that you don't know or that are very technical, don't answer in too much detail. In those cases, try to excuse yourself with a joke.
-Also, remember you are not here to assist people. Don't say that.
-"""
-    return data
+def get_context(group_id: int, processed_summary: str, session: Session) -> str:
+    """Retrieve the context for a group and append the processed summary."""
+    prompt_config = session.query(PromptConfig).filter_by(group_id=group_id).first()
+    if prompt_config:
+        return f"{prompt_config.prompt_chat}\n{processed_summary}"
+    else:
+        raise ValueError("Prompt configuration not found for the specified group.")
 
 
-@retry(max_retries=5, wait_time=60)
-def make_completion(messages, context, excuses=None):
+def format_messages_for_completion(msg: Message) -> dict:
+    """Format a Message instance to dictionary format for completion."""
+    return dict(role=msg.message_type, content=msg.content)
+
+
+def make_completion(messages: List[dict], context: str) -> str:
+    """Generate a completion response using ChatOpenAI."""
     messages_ = [SystemMessage(content=context)]
     for msg in messages:
         role = msg.get("role")
@@ -70,18 +59,92 @@ def make_completion(messages, context, excuses=None):
             messages_.append(HumanMessage(content=content))
         elif role == "assistant":
             messages_.append(AIMessage(content=content))
-    # response = chat(messages_)
-    # return response.content
-    return "I'm sorry, I'm not able to respond at the moment."
+    response = chat.invoke(messages_)
+    print(f"Response: {response}")
+    return response.content
 
 
-def f2p(msg: Message) -> dict:
-    return dict(role=msg.message_type, content=msg.content)
+def process_pdf(
+    file: file_storage.FileStorage, upload_folder: str, group_id: int, session: Session
+) -> Tuple[str, FileStorage, str]:
+    """Process a PDF file by converting each page to an image and generating summaries."""
+    # Retrieve the prompt for the group
+    print("Retrieving prompt configuration...")
+    prompt_config = session.query(PromptConfig).filter_by(group_id=group_id).first()
+    if not prompt_config:
+        raise ValueError("Prompt configuration not found for the specified group.")
+
+    original_filename, new_file_storage, file_path = save_file(
+        file, upload_folder, session
+    )
+
+    # Convert PDF pages to images
+    pages = convert_from_path(file_path, fmt="png")
+    responses = []
+
+    for i, page in enumerate(pages):
+        print(f"Processing page {i + 1} of {len(pages)}")
+
+        # Convert each page to a base64-encoded image string
+        buffer = io.BytesIO()
+        page.save(buffer, format="png")
+        content = base64.b64encode(buffer.getbuffer().tobytes()).decode("utf-8")
+
+        # Generate completion for each image page
+        response = call_gpt_vision(str(prompt_config.prompt_gpt_vision), content)
+        responses.append(response.content)
+        buffer.close()
+
+    # Combine responses into a summary
+    print("Getting summary response...")
+    summary = call_summary_model(
+        str(prompt_config.prompt_summary_pdf), "\n".join(responses)
+    ).content
+
+    return original_filename, new_file_storage, summary
 
 
-def predict(history: List[Message], ai_persona: str):
-    context = get_context(ai_persona)
-    history_ = [f2p(msg) for msg in history]
-    excuses_ = excuses.get(ai_persona.lower(), [])
-    response = make_completion(history_, context, excuses=excuses_)
-    return response
+def save_file(
+    file: file_storage.FileStorage, upload_folder: str, session: Session
+) -> Tuple[str, FileStorage, str]:
+    """Save a file to the server and database."""
+    original_filename = secure_filename(file.filename)
+    file_uuid = uuid.uuid4().hex
+    file_path = os.path.join(upload_folder, f"{file_uuid}.pdf")
+    file.save(file_path)
+    new_file_storage = FileStorage(
+        file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
+    )
+    session.add(new_file_storage)
+    session.commit()
+    return original_filename, new_file_storage, file_path
+
+
+def call_gpt_vision(prompt: str, content: str) -> BaseMessage:
+    return vision_model.invoke(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{content}"},
+                    },
+                ]
+            )
+        ]
+    )
+
+
+def call_summary_model(prompt: str, content: str) -> BaseMessage:
+    return chat.invoke(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": prompt},
+                    {"type": "text", "text": content},
+                ]
+            )
+        ],
+        response_format={"type": "json_object"},
+    )
