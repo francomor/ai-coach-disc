@@ -1,6 +1,5 @@
 import json
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List
 
@@ -17,7 +16,6 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
 )
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
 
 from database_models import (
     DB_URI,
@@ -378,7 +376,7 @@ def complete_onboarding():
 @jwt_required()
 def upload_group_file():
     user_id = get_jwt_identity()
-    user_group_id = request.form.get("user_group_id")
+    user_group_id = request.form.get("user_group_id", type=int)
 
     # Check if the user group exists for this user
     user_group = (
@@ -473,7 +471,7 @@ def file_history():
 @jwt_required()
 def upload_participant_file():
     user_id = get_jwt_identity()
-    participant_id = request.form.get("participant_id")
+    participant_id = request.form.get("participant_id", type=int)
 
     participant = (
         db.session.query(Participant)
@@ -491,33 +489,36 @@ def upload_participant_file():
     if file.filename == "" or not file.filename.endswith(".pdf"):
         return jsonify({"msg": "Invalid file type; only PDFs allowed"}), 400
 
-    original_filename = secure_filename(file.filename)
-    file_uuid = uuid.uuid4().hex
     user_folder = os.path.join(
         app.config["UPLOAD_FOLDER"], str(user_id), str(participant_id)
     )
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
+    try:
+        original_filename, new_file_storage, summary = process_pdf(
+            file, user_folder, participant.group_id, db.session
+        )
 
-    file_path = os.path.join(user_folder, f"{file_uuid}.pdf")
-    file.save(file_path)
+        # TODO: add a check to see if the file is DISC
 
-    new_file_storage = FileStorage(
-        file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
-    )
-    db.session.add(new_file_storage)
-    db.session.commit()
+        new_participant_file = ParticipantFile(
+            participant_id=participant_id,
+            file_storage_id=new_file_storage.id,
+            processed_summary=summary,
+        )
+        db.session.add(new_participant_file)
+        db.session.commit()
 
-    new_participant_file = ParticipantFile(
-        participant_id=participant_id, file_storage_id=new_file_storage.id
-    )
-    db.session.add(new_participant_file)
-    db.session.commit()
+        return (
+            jsonify(
+                {"msg": "File uploaded successfully", "filename": original_filename}
+            ),
+            200,
+        )
 
-    return (
-        jsonify({"msg": "File uploaded successfully", "filename": original_filename}),
-        200,
-    )
+    except Exception as e:
+        print(f"Error processing PDF: {e}")
+        return jsonify({"msg": "Failed to process PDF", "error": str(e)}), 500
 
 
 @app.route("/participants/file-history", methods=["GET"])
@@ -542,6 +543,7 @@ def participant_file_history():
         .limit(3)
         .all()
     )
+    print(files)
 
     history = [
         {

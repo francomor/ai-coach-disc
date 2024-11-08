@@ -110,6 +110,7 @@ class ParticipantFile(Base):
     id = Column(Integer, primary_key=True)
     participant_id = Column(Integer, ForeignKey("Participants.id"), nullable=False)
     file_storage_id = Column(Integer, ForeignKey("FileStorage.id"), nullable=False)
+    processed_summary = Column(Text, nullable=True)
 
     # Relationships
     participant = relationship("Participant", back_populates="files")

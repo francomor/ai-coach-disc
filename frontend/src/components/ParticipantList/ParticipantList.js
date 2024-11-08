@@ -116,6 +116,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
     if (!validateInputs()) return;
 
     try {
+      setIsUploading(true);
       const response = await addParticipant(accessToken, groupId, participantName);
       if (selectedFile) await uploadParticipantFile(accessToken, selectedFile, response.participant.id);
       setDialogOpen(false);
@@ -125,7 +126,9 @@ const ParticipantList = ({ accessToken, groupId }) => {
       setUploadSuccess(true);
     } catch (error) {
       console.error("Error adding participant:", error);
-      setUploadError("Error adding participant. Please try again.");
+      setUploadError("Error al agregar participante. Por favor intente nuevamente.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -133,6 +136,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
     if (!validateInputs()) return;
 
     try {
+      setIsUploading(true);
       await editParticipant(accessToken, currentParticipantId, participantName);
       if (selectedFile) await handleFileUpload();
       setDialogOpen(false);
@@ -142,7 +146,9 @@ const ParticipantList = ({ accessToken, groupId }) => {
       setUploadSuccess(true);
     } catch (error) {
       console.error("Error editing participant:", error);
-      setUploadError("Error editing participant. Please try again.");
+      setUploadError("Error al editar participante. Por favor intente nuevamente.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -194,7 +200,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
         setUploadSuccess(true);
       } catch (error) {
         console.error("Error uploading file:", error);
-        setUploadError("Error uploading file. Please try again.");
+        setUploadError("Error al subir el archivo. Por favor intente nuevamente.");
       } finally {
         setIsUploading(false);
       }
@@ -296,6 +302,8 @@ const ParticipantList = ({ accessToken, groupId }) => {
               </Button>
             )}
           </Box>
+
+          {/* Display uploading messages and error when adding */}
           {isUploading && (
             <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
               Procesar el archivo demora al menos 1 minuto, por favor no cierre esta ventana
@@ -306,11 +314,33 @@ const ParticipantList = ({ accessToken, groupId }) => {
               {uploadError}
             </Typography>
           )}
+
+          {editMode && (
+            <>
+              <Typography variant="subtitle1" sx={{ mt: 3 }}>
+                Archivos recientes del participante
+              </Typography>
+              <List>
+                {(fileHistory[currentParticipantId] || []).map((file, index) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={file.file_name}
+                      secondary={`Subido el ${new Date(file.uploaded_at).toLocaleString()}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={editMode ? handleEditParticipant : handleAddParticipant}>
-            {editMode ? "Guardar" : "Agregar"}
+          {/* Show "Cancelar" button only when not uploading */}
+          {!isUploading && <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>}
+
+          <Button onClick={editMode ? handleEditParticipant : handleAddParticipant} disabled={isUploading}>
+            {/* Show CircularProgress only in add mode and during uploading */}
+            {!editMode && isUploading ? <CircularProgress size={24} /> : editMode ? "Guardar" : "Agregar"}
           </Button>
         </DialogActions>
       </Dialog>
