@@ -5,7 +5,10 @@ from typing import List
 
 import bcrypt
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, redirect, request
+from flask_admin import Admin, AdminIndexView
+from flask_admin.contrib.sqla import ModelView
+from flask_basicauth import BasicAuth
 from flask_cors import CORS
 from flask_jwt_extended import (
     JWTManager,
@@ -16,6 +19,8 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
 )
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.exceptions import HTTPException
+from werkzeug.wrappers import Response
 
 from database_models import (
     DB_URI,
@@ -26,6 +31,7 @@ from database_models import (
     OnboardingAnswer,
     Participant,
     ParticipantFile,
+    PromptConfig,
     Question,
     User,
     UserGroup,
@@ -66,6 +72,65 @@ app.config["UPLOAD_FOLDER"] = "data"
 # Ensure the /data directory exists
 if not os.path.exists(app.config["UPLOAD_FOLDER"]):
     os.makedirs(app.config["UPLOAD_FOLDER"])
+
+# Initialize Flask-Admin
+app.config["BASIC_AUTH_USERNAME"] = "franco_morero"
+app.config["BASIC_AUTH_PASSWORD"] = "M(ZtZ2r29r#b"
+
+basic_auth = BasicAuth(app)
+
+
+class AuthException(HTTPException):
+    def __init__(self, message):
+        super().__init__(
+            message,
+            Response(
+                "You could not be authenticated. Please refresh the page.",
+                401,
+                {"WWW-Authenticate": 'Basic realm="Login Required"'},
+            ),
+        )
+
+
+class AuthenticatedModelView(ModelView):
+    def is_accessible(self):
+        if not basic_auth.authenticate():
+            raise AuthException("Not authenticated.")
+        else:
+            return True
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(basic_auth.challenge())
+
+
+class MyAdminIndexView(AdminIndexView):
+    def is_accessible(self):
+        if not basic_auth.authenticate():
+            raise AuthException("Not authenticated.")
+        else:
+            return True
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(basic_auth.challenge())
+
+
+admin = Admin(
+    app, name="Admin Panel", template_mode="bootstrap4", index_view=MyAdminIndexView()
+)
+db_models = [
+    Question,
+    OnboardingAnswer,
+    User,
+    PromptConfig,
+    Group,
+    FileStorage,
+    ParticipantFile,
+    Participant,
+    UserGroup,
+    Message,
+]
+for db_model in db_models:
+    admin.add_view(AuthenticatedModelView(db_model, db.session))
 
 
 @app.route("/token", methods=["POST"])
