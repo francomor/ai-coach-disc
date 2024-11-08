@@ -190,6 +190,7 @@ export const uploadGroupFile = async (token, file, userGroupId) => {
     throw error;
   }
 };
+
 export const fetchParticipantFileHistory = async (token, participantId) => {
   try {
     const response = await axios.get(`${myConfig.apiUrl}/participants/file-history`, {

@@ -3,7 +3,7 @@ import { ChatContext } from "../../contexts/chat";
 import "./ChatBox.css";
 import Message from "./Message/Message";
 import { sendMessage, fetchChatHistory, fetchGroupFileHistory, uploadGroupFile } from "../../helpers";
-import { Modal, Button, Snackbar, Alert } from "@mui/material";
+import { Modal, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
@@ -17,6 +17,8 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -120,6 +122,8 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
 
   const handleFileUpload = async () => {
     if (selectedFile && groupId) {
+      setIsUploading(true);
+      setUploadError(""); // Clear previous error
       try {
         await uploadGroupFile(accessToken, selectedFile, groupId);
         setSelectedFile(null);
@@ -127,10 +131,12 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
         const history = await fetchGroupFileHistory(accessToken, groupId);
         setHasFile(history.length > 0);
         setShowUploadModal(false);
-
         setUploadSuccess(true);
       } catch (error) {
         console.error("Error uploading file:", error);
+        setUploadError("Error uploading file. Please try again.");
+      } finally {
+        setIsUploading(false);
       }
     }
   };
@@ -230,10 +236,20 @@ const ChatBox = ({ user, accessToken, setToken, removeToken, groupId }) => {
             >
               {selectedFile ? selectedFile.name : "Ningún archivo seleccionado"}
             </Typography>
-            <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
-              Subir PDF
+            <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile || isUploading}>
+              {isUploading ? <CircularProgress size={24} /> : "Subir PDF"}
             </Button>
           </Box>
+          {isUploading && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+              Procesar el archivo demora al menos 1 minuto, por favor no cierre esta ventana
+            </Typography>
+          )}
+          {uploadError && (
+            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+              {uploadError}
+            </Typography>
+          )}
         </Box>
       </Modal>
 

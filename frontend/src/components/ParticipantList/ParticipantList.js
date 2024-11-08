@@ -14,6 +14,9 @@ import {
   IconButton,
   Box,
   Typography,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -35,13 +38,16 @@ const ParticipantList = ({ accessToken, groupId }) => {
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false); // To check if we're editing or adding
+  const [editMode, setEditMode] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState(null);
   const [participantName, setParticipantName] = useState("");
   const [nameError, setNameError] = useState("");
   const [participants, setParticipants] = useState([]);
   const [fileHistory, setFileHistory] = useState({});
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const { selectedParticipant } = useContext(ChatContext)[0];
   const dispatch = useContext(ChatContext)[1];
 
@@ -107,40 +113,36 @@ const ParticipantList = ({ accessToken, groupId }) => {
   };
 
   const handleAddParticipant = async () => {
-    if (!validateInputs()) {
-      return;
-    }
+    if (!validateInputs()) return;
 
     try {
       const response = await addParticipant(accessToken, groupId, participantName);
-      if (selectedFile) {
-        await uploadParticipantFile(accessToken, selectedFile, response.participant.id);
-      }
+      if (selectedFile) await uploadParticipantFile(accessToken, selectedFile, response.participant.id);
       setDialogOpen(false);
       setParticipantName("");
       setSelectedFile(null);
       fetchParticipantsList();
+      setUploadSuccess(true);
     } catch (error) {
       console.error("Error adding participant:", error);
+      setUploadError("Error adding participant. Please try again.");
     }
   };
 
   const handleEditParticipant = async () => {
-    if (!validateInputs()) {
-      return;
-    }
+    if (!validateInputs()) return;
 
     try {
       await editParticipant(accessToken, currentParticipantId, participantName);
-      if (selectedFile) {
-        await handleFileUpload();
-      }
+      if (selectedFile) await handleFileUpload();
       setDialogOpen(false);
       setEditMode(false);
       setParticipantName("");
       fetchParticipantsList();
+      setUploadSuccess(true);
     } catch (error) {
       console.error("Error editing participant:", error);
+      setUploadError("Error editing participant. Please try again.");
     }
   };
 
@@ -183,12 +185,18 @@ const ParticipantList = ({ accessToken, groupId }) => {
 
   const handleFileUpload = async () => {
     if (selectedFile && currentParticipantId) {
+      setIsUploading(true);
+      setUploadError("");
       try {
         await uploadParticipantFile(accessToken, selectedFile, currentParticipantId);
         setSelectedFile(null);
         fetchFileHistoryForParticipant(currentParticipantId);
+        setUploadSuccess(true);
       } catch (error) {
         console.error("Error uploading file:", error);
+        setUploadError("Error uploading file. Please try again.");
+      } finally {
+        setIsUploading(false);
       }
     }
   };
@@ -283,27 +291,20 @@ const ParticipantList = ({ accessToken, groupId }) => {
               {selectedFile ? selectedFile.name : "No hay archivo seleccionado"}
             </Typography>
             {editMode && (
-              <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
-                Subir PDF
+              <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile || isUploading}>
+                {isUploading ? <CircularProgress size={24} /> : "Subir PDF"}
               </Button>
             )}
           </Box>
-          {editMode && (
-            <>
-              <Typography variant="subtitle1" sx={{ mt: 3 }}>
-                Archivos recientes del participante
-              </Typography>
-              <List>
-                {(fileHistory[currentParticipantId] || []).map((file, index) => (
-                  <ListItem key={index}>
-                    <ListItemText
-                      primary={file.file_name}
-                      secondary={`Subido el ${new Date(file.uploaded_at).toLocaleString()}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </>
+          {isUploading && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+              Procesar el archivo demora al menos 1 minuto, por favor no cierre esta ventana
+            </Typography>
+          )}
+          {uploadError && (
+            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+              {uploadError}
+            </Typography>
           )}
         </DialogContent>
         <DialogActions>
@@ -313,6 +314,17 @@ const ParticipantList = ({ accessToken, groupId }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={uploadSuccess}
+        autoHideDuration={3000}
+        onClose={() => setUploadSuccess(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setUploadSuccess(false)} severity="success" sx={{ width: "100%" }}>
+          Archivo subido con éxito.
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

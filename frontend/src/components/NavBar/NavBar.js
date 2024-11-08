@@ -9,7 +9,20 @@ import Container from "@mui/material/Container";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
-import { Menu, MenuItem, Modal, Button, List, ListItem, ListItemText, Tabs, Tab } from "@mui/material";
+import {
+  Menu,
+  MenuItem,
+  Modal,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Tabs,
+  Tab,
+  CircularProgress,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import { logMeOut, uploadGroupFile, fetchGroupFileHistory } from "../../helpers";
 
 const NavBar = ({
@@ -26,6 +39,9 @@ const NavBar = ({
   const [fileHistory, setFileHistory] = useState({});
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const navigate = useNavigate();
 
   const settings = [
@@ -75,13 +91,18 @@ const NavBar = ({
   const handleFileUpload = async () => {
     const groupId = groups[activeTab].id;
     if (selectedFile && groupId) {
+      setIsUploading(true);
+      setUploadError("");
       try {
         await uploadGroupFile(accessToken, selectedFile, groupId);
         setSelectedFile(null);
-
+        setUploadSuccess(true);
         handleFetchGroupFileHistory(groupId);
       } catch (error) {
         console.error("Error al subir archivo:", error);
+        setUploadError("Error al subir archivo. Por favor intente nuevamente.");
+      } finally {
+        setIsUploading(false);
       }
     }
   };
@@ -212,10 +233,20 @@ const NavBar = ({
             >
               {selectedFile ? selectedFile.name : "Ningún archivo seleccionado"}
             </Typography>
-            <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile}>
-              Subir PDF
+            <Button variant="contained" onClick={handleFileUpload} disabled={!selectedFile || isUploading}>
+              {isUploading ? <CircularProgress size={24} /> : "Subir PDF"}
             </Button>
           </Box>
+          {isUploading && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+              Procesar el archivo demora al menos 1 minuto, por favor no cierre esta ventana
+            </Typography>
+          )}
+          {uploadError && (
+            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+              {uploadError}
+            </Typography>
+          )}
 
           <Typography variant="subtitle1" sx={{ mt: 3 }}>
             Subidas recientes para {groups[activeTab].name}
@@ -232,6 +263,18 @@ const NavBar = ({
           </List>
         </Box>
       </Modal>
+
+      {/* Snackbar for successful upload feedback */}
+      <Snackbar
+        open={uploadSuccess}
+        autoHideDuration={3000}
+        onClose={() => setUploadSuccess(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setUploadSuccess(false)} severity="success" sx={{ width: "100%" }}>
+          Archivo subido con éxito.
+        </Alert>
+      </Snackbar>
     </>
   );
 };
