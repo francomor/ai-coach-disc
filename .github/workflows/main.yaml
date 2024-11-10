@@ -1,13 +1,13 @@
-name: Upload Website
+name: Build and Deploy Frontend
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+
+env:
+  CI: false
 
 jobs:
-  build:
+  frontend-build-and-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
