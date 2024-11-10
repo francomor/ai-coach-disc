@@ -23,7 +23,7 @@ seed-db:
 .PHONY: backend frontend
 
 backend:
-	poetry run flask --app app --debug run
+	poetry run flask --app backend.app --debug run
 
 frontend:
 	cd frontend

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from werkzeug.datastructures import file_storage
 from werkzeug.utils import secure_filename
 
-from database_models import FileStorage, Message, PromptConfig
+from .database_models import FileStorage, Message, PromptConfig
 
 # Initialize the ChatOpenAI model. Test gpt-4-turbo and gpt-4o-mini models
 chat = ChatOpenAI(model_name="gpt-4-turbo", temperature=0.7, max_retries=2, timeout=30)

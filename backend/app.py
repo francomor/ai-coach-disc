@@ -22,7 +22,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
-from database_models import (
+from .database_models import (
     DB_URI,
     Base,
     FileStorage,
@@ -37,7 +37,7 @@ from database_models import (
     UserGroup,
     UserGroupFile,
 )
-from model import predict, process_pdf
+from .model import predict, process_pdf
 
 load_dotenv()
 

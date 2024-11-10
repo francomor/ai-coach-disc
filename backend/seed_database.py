@@ -2,7 +2,7 @@ from pathlib import Path
 
 import bcrypt
 
-from database_models import (
+from .database_models import (
     Base,
     Group,
     OnboardingAnswer,
