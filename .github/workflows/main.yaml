@@ -2,9 +2,6 @@ name: Build and Deploy Frontend
 
 on: workflow_dispatch
 
-env:
-  CI: false
-
 jobs:
   frontend-build-and-deploy:
     runs-on: ubuntu-latest
@@ -26,6 +23,9 @@ jobs:
 
       - name: Build app
         run: npm run build
+        env:
+          CI: false
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
 
       - name: Upload to S3
         uses: jakejarvis/s3-sync-action@master
