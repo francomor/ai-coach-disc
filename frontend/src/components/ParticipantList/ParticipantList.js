@@ -126,7 +126,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
       setUploadSuccess(true);
     } catch (error) {
       console.error("Error adding participant:", error);
-      setUploadError("Error al agregar participante. Por favor intente nuevamente.");
+      setUploadError("Error al agregar colaborador. Por favor intente nuevamente.");
     } finally {
       setIsUploading(false);
     }
@@ -146,7 +146,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
       setUploadSuccess(true);
     } catch (error) {
       console.error("Error editing participant:", error);
-      setUploadError("Error al editar participante. Por favor intente nuevamente.");
+      setUploadError("Error al editar colaborador. Por favor intente nuevamente.");
     } finally {
       setIsUploading(false);
     }
@@ -210,7 +210,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
   return (
     <div className={`participant-list-container ${open ? "expanded" : "collapsed"}`}>
       <div className={`header ${open ? "header-expanded" : "header-collapsed"}`}>
-        {(isMobile || open) && <span className="header-title">Participantes</span>}
+        {(isMobile || open) && <span className="header-title">Colaboradores</span>}
         <button onClick={handleToggle} className="toggle-button">
           {isMobile ? (
             open ? (
@@ -265,7 +265,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
       )}
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} disableEnforceFocus disableAutoFocus>
-        <DialogTitle>{editMode ? "Editar participante" : "Agregar nuevo participante"}</DialogTitle>
+        <DialogTitle>{editMode ? "Editar colaborador" : "Agregar nuevo colaborador"}</DialogTitle>
         <DialogContent onKeyDown={handleKeyDown}>
           <TextField
             autoFocus
@@ -318,7 +318,7 @@ const ParticipantList = ({ accessToken, groupId }) => {
           {editMode && (
             <>
               <Typography variant="subtitle1" sx={{ mt: 3 }}>
-                Archivos recientes del participante
+                Archivos recientes del colaborador
               </Typography>
               <List>
                 {(fileHistory[currentParticipantId] || []).map((file, index) => (

@@ -23,8 +23,8 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_HOST = os.getenv("DB_HOST", "")
 DB_NAME = os.getenv("DB_NAME", "file.db")
 
-if DB_TYPE == "mysql":
-    DB_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+if DB_TYPE == "postgres":
+    DB_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 else:
     file_path = f"{os.path.abspath(os.getcwd())}/{DB_NAME}"
     DB_URI = f"sqlite:///{file_path}"
@@ -61,6 +61,7 @@ class User(Base):
     name = Column(String(80), nullable=False)
     password = Column(String(255), nullable=False)
     onboarding_complete = Column(Boolean, default=False)
+    enabled = Column(Boolean, default=True)
 
     # Relationships
     user_groups = relationship("UserGroup", back_populates="user")
@@ -72,7 +73,9 @@ class PromptConfig(Base):
     __tablename__ = "PromptConfigs"
     id = Column(Integer, primary_key=True)
     group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
+    api_key = Column(String(255), nullable=False)
     prompt_chat = Column(Text, nullable=False)
+    prompt_chat_with_participant = Column(Text, nullable=False)
     prompt_gpt_vision = Column(Text, nullable=False)
     prompt_summary_pdf = Column(Text, nullable=False)
 

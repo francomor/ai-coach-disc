@@ -13,7 +13,7 @@ install-front:
 	npm install
 
 seed-db:
-	poetry run python seed_database.py
+	poetry run python -m backend.seed_database
 
 # DEVELOPMENT
 # ~~~~~~~~~~~
@@ -40,3 +40,14 @@ pre-commit:
 
 prettier:
 	npx prettier frontend/. --write
+
+
+# ADMINISTRATION
+# ~~~~~~~~~~~~~~
+# The following rules can be used to perform administrative tasks.
+# --------------------------------------------------------------------------------------------------
+
+.PHONY: admin-scripts
+
+admin-scripts:
+	poetry run python -m scripts.admin_scripts

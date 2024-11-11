@@ -12,7 +12,7 @@ const BioBox = () => {
       <div className="bio-box">
         <Avatar sx={{ width: { xs: 45, md: 45 }, height: { xs: 45, md: 45 } }} />
         <div className="character-info">
-          <div className="character-name">Sin participantes</div>
+          <div className="character-name">Chateando con tu perfil</div>
         </div>
       </div>
     );
@@ -26,7 +26,7 @@ const BioBox = () => {
         alt={selectedParticipant.name}
       />
       <div className="character-info">
-        <div className="character-name">{selectedParticipant.name}</div>
+        <div className="character-name">Chateando con el perfil de {selectedParticipant.name}</div>
         <div className="character-description">{selectedParticipant.description}</div>
       </div>
     </div>

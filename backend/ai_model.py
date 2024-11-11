@@ -1,9 +1,10 @@
 import base64
 import io
+import logging
 import os
 import uuid
 from datetime import datetime
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -12,36 +13,61 @@ from sqlalchemy.orm import Session
 from werkzeug.datastructures import file_storage
 from werkzeug.utils import secure_filename
 
-from .database_models import FileStorage, Message, PromptConfig
+from .models import FileStorage, Message, PromptConfig
 
-# Initialize the ChatOpenAI model. Test gpt-4-turbo and gpt-4o-mini models
-chat = ChatOpenAI(model_name="gpt-4-turbo", temperature=0.7, max_retries=2, timeout=30)
-vision_model = ChatOpenAI(
-    model_name="gpt-4o-mini", temperature=0, max_retries=2, timeout=30
-)
+logging.basicConfig(level=logging.INFO)
+
+
+chat_models: Dict[int, ChatOpenAI] = {}
 
 
 def predict(
-    history: List[Message], group_id: int, processed_summary: str, session: Session
+    history: List[Message],
+    group_id: int,
+    processed_summary: str,
+    session: Session,
+    participant_processed_summary: Optional[str],
 ) -> str:
     """Generate a prediction for chat history with group-specific context."""
-    context = get_context(group_id, processed_summary, session)
-    print(f"Context: {context}")
+    prompt_config = session.query(PromptConfig).filter_by(group_id=group_id).first()
+    if not prompt_config:
+        raise ValueError("Prompt configuration not found for the specified group.")
+    chat_model = get_chat_model(group_id, str(prompt_config.api_key))
+    context = get_context(
+        processed_summary,
+        participant_processed_summary,
+        str(prompt_config.prompt_chat),
+        str(prompt_config.prompt_chat_with_participant),
+    )
     history_ = [format_messages_for_completion(msg) for msg in reversed(history)]
-
-    for msg in history:
-        print(f"Message: {msg.content}")
-    response = make_completion(history_, context)
+    response = make_completion(chat_model, history_, context)
     return response
 
 
-def get_context(group_id: int, processed_summary: str, session: Session) -> str:
+def get_chat_model(group_id: int, api_key: str) -> ChatOpenAI:
+    """Retrieve a chat model for a specific group."""
+    if group_id not in chat_models:
+        chat_models[group_id] = ChatOpenAI(
+            model_name="gpt-4-turbo",
+            temperature=0.7,
+            max_retries=2,
+            timeout=30,
+            api_key=api_key,
+        )
+    return chat_models[group_id]
+
+
+def get_context(
+    processed_summary: str,
+    participant_processed_summary: Optional[str],
+    prompt_chat: str,
+    prompt_chat_with_participant: str,
+) -> str:
     """Retrieve the context for a group and append the processed summary."""
-    prompt_config = session.query(PromptConfig).filter_by(group_id=group_id).first()
-    if prompt_config:
-        return f"{prompt_config.prompt_chat}\n{processed_summary}"
-    else:
-        raise ValueError("Prompt configuration not found for the specified group.")
+    context = f"{prompt_chat}\n{processed_summary}"
+    if participant_processed_summary:
+        context += f"\n{prompt_chat_with_participant}\n{participant_processed_summary}"
+    return context
 
 
 def format_messages_for_completion(msg: Message) -> dict:
@@ -49,7 +75,7 @@ def format_messages_for_completion(msg: Message) -> dict:
     return dict(role=msg.message_type, content=msg.content)
 
 
-def make_completion(messages: List[dict], context: str) -> str:
+def make_completion(chat_model: ChatOpenAI, messages: List[dict], context: str) -> str:
     """Generate a completion response using ChatOpenAI."""
     messages_ = [SystemMessage(content=context)]
     for msg in messages:
@@ -59,8 +85,7 @@ def make_completion(messages: List[dict], context: str) -> str:
             messages_.append(HumanMessage(content=content))
         elif role == "assistant":
             messages_.append(AIMessage(content=content))
-    response = chat.invoke(messages_)
-    print(f"Response: {response}")
+    response = chat_model.invoke(messages_)
     return response.content
 
 
@@ -69,10 +94,25 @@ def process_pdf(
 ) -> Tuple[str, FileStorage, str]:
     """Process a PDF file by converting each page to an image and generating summaries."""
     # Retrieve the prompt for the group
-    print("Retrieving prompt configuration...")
+    logging.info("Retrieving prompt configuration...")
     prompt_config = session.query(PromptConfig).filter_by(group_id=group_id).first()
     if not prompt_config:
         raise ValueError("Prompt configuration not found for the specified group.")
+
+    vision_model = ChatOpenAI(
+        model_name="gpt-4o-mini",
+        temperature=0,
+        max_retries=2,
+        timeout=30,
+        api_key=str(prompt_config.api_key),
+    )
+    summary_model = ChatOpenAI(
+        model_name="gpt-4-turbo",
+        temperature=0.7,
+        max_retries=2,
+        timeout=30,
+        api_key=str(prompt_config.api_key),
+    )
 
     original_filename, new_file_storage, file_path = save_file(
         file, upload_folder, session
@@ -83,7 +123,7 @@ def process_pdf(
     responses = []
 
     for i, page in enumerate(pages):
-        print(f"Processing page {i + 1} of {len(pages)}")
+        logging.info(f"Processing page {i + 1} of {len(pages)}")
 
         # Convert each page to a base64-encoded image string
         buffer = io.BytesIO()
@@ -91,14 +131,16 @@ def process_pdf(
         content = base64.b64encode(buffer.getbuffer().tobytes()).decode("utf-8")
 
         # Generate completion for each image page
-        response = call_gpt_vision(str(prompt_config.prompt_gpt_vision), content)
+        response = call_gpt_vision(
+            vision_model, str(prompt_config.prompt_gpt_vision), content
+        )
         responses.append(response.content)
         buffer.close()
 
     # Combine responses into a summary
-    print("Getting summary response...")
+    logging.info("Getting summary response...")
     summary = call_summary_model(
-        str(prompt_config.prompt_summary_pdf), "\n".join(responses)
+        summary_model, str(prompt_config.prompt_summary_pdf), "\n".join(responses)
     ).content
 
     return original_filename, new_file_storage, summary
@@ -120,7 +162,7 @@ def save_file(
     return original_filename, new_file_storage, file_path
 
 
-def call_gpt_vision(prompt: str, content: str) -> BaseMessage:
+def call_gpt_vision(vision_model: ChatOpenAI, prompt: str, content: str) -> BaseMessage:
     return vision_model.invoke(
         [
             HumanMessage(
@@ -136,8 +178,10 @@ def call_gpt_vision(prompt: str, content: str) -> BaseMessage:
     )
 
 
-def call_summary_model(prompt: str, content: str) -> BaseMessage:
-    return chat.invoke(
+def call_summary_model(
+    summary_model: ChatOpenAI, prompt: str, content: str
+) -> BaseMessage:
+    return summary_model.invoke(
         [
             HumanMessage(
                 content=[

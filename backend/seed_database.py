@@ -1,8 +1,10 @@
+import os
 from pathlib import Path
 
 import bcrypt
+from dotenv import load_dotenv
 
-from .database_models import (
+from .models import (
     Base,
     Group,
     OnboardingAnswer,
@@ -14,6 +16,8 @@ from .database_models import (
     engine,
     session,
 )
+
+load_dotenv()
 
 # Test data
 user_data = [
@@ -38,24 +42,33 @@ groups_data = [
     {"id": 2, "name": "HPTI Coach", "url_slug": "hpti-coach", "image": "/hpti.png"},
 ]
 
-prompts_folder = Path("prompts")
+prompts_folder = Path("backend/prompts")
 disc_folder = prompts_folder / "disc"
+
 hpti_folder = prompts_folder / "hpti"
 
 prompts_configs_data = [
     {
         "id": 1,
         "group_id": 1,
+        "api_key": os.getenv("DISC_OPENAI_API_KEY"),
         "prompt_chat": Path(disc_folder / "chat.txt").read_text(),
+        "prompt_chat_with_participant": Path(
+            disc_folder / "chat_with_participant.txt"
+        ).read_text(),
         "prompt_gpt_vision": Path(disc_folder / "gpt_vision.txt").read_text(),
         "prompt_summary_pdf": Path(disc_folder / "summary_pdf.txt").read_text(),
     },
     {
         "id": 2,
         "group_id": 2,
-        "prompt_chat": "Prompt for chat",
-        "prompt_gpt_vision": "Prompt for GPT Vision",
-        "prompt_summary_pdf": "Prompt for PDF summary",
+        "api_key": os.getenv("HPTI_OPENAI_API_KEY"),
+        "prompt_chat": Path(hpti_folder / "chat.txt").read_text(),
+        "prompt_chat_with_participant": Path(
+            hpti_folder / "chat_with_participant.txt"
+        ).read_text(),
+        "prompt_gpt_vision": Path(hpti_folder / "gpt_vision.txt").read_text(),
+        "prompt_summary_pdf": Path(hpti_folder / "summary_pdf.txt").read_text(),
     },
 ]
 
@@ -166,7 +179,9 @@ def populate_tables():
         new_prompt_config = PromptConfig(
             id=prompt_config["id"],
             group_id=prompt_config["group_id"],
+            api_key=prompt_config["api_key"],
             prompt_chat=prompt_config["prompt_chat"],
+            prompt_chat_with_participant=prompt_config["prompt_chat_with_participant"],
             prompt_gpt_vision=prompt_config["prompt_gpt_vision"],
             prompt_summary_pdf=prompt_config["prompt_summary_pdf"],
         )

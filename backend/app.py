@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import List
@@ -22,7 +23,8 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
-from .database_models import (
+from .ai_model import predict, process_pdf
+from .models import (
     DB_URI,
     Base,
     FileStorage,
@@ -37,7 +39,13 @@ from .database_models import (
     UserGroup,
     UserGroupFile,
 )
-from .model import predict, process_pdf
+
+# Setup logging
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
 
 load_dotenv()
 
@@ -133,6 +141,16 @@ for db_model in db_models:
     admin.add_view(AuthenticatedModelView(db_model, db.session))
 
 
+# Adding logging to requests
+@app.before_request
+def log_request_info():
+    logging.info(f"Request Path: {request.path}")
+    logging.info(f"Request Method: {request.method}")
+    logging.info(f"Request Headers: {request.headers}")
+    if request.is_json:
+        logging.info(f"Request Body: {request.get_json()}")
+
+
 @app.route("/token", methods=["POST"])
 def create_token():
     username = request.json.get("username", None)
@@ -140,13 +158,22 @@ def create_token():
 
     user = db.session.query(User).filter_by(username=username).first()
 
+    logging.info(f"Token request for user: {username}")
+
     if not user:
+        logging.warning(f"User not found: {username}")
         return jsonify({"msg": "User not found"}), 401
 
+    if not user.enabled:
+        logging.warning(f"User disabled: {username}")
+        return jsonify({"msg": "User disabled"}), 401
+
     if not bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
+        logging.warning(f"Wrong password for user: {username}")
         return jsonify({"msg": "Wrong password"}), 401
 
     access_token = create_access_token(identity=user.id)
+    logging.info(f"Access token created for user: {username}")
     return jsonify({"access_token": access_token})
 
 
@@ -173,6 +200,7 @@ def refresh_expiring_jwts(response):
 def logout():
     response = jsonify({"msg": "logout successful"})
     unset_jwt_cookies(response)
+    logging.info("User logged out successfully")
     return response
 
 
@@ -183,6 +211,7 @@ def get_group_chat_history(group_id):
     user = db.session.query(User).filter_by(id=user_id).first()
 
     if not user:
+        logging.warning(f"User not found: ID {user_id}")
         return jsonify({"msg": "User not found"}), 404
 
     offset = request.args.get("offset", 0, type=int)
@@ -203,6 +232,7 @@ def get_group_chat_history(group_id):
                 "timestamp": message.timestamp.isoformat(),
             }
         )
+    logging.info(f"Chat history retrieved for group {group_id} by user {user_id}")
     return jsonify(response)
 
 
@@ -249,7 +279,7 @@ def get_messages(group_id, participant_id):
         return jsonify(response)
 
     except Exception as e:
-        print(f"Error in get_messages: {str(e)}")
+        logging.error(f"Error in get_messages: {str(e)}")
         return jsonify({"msg": "Server error"}), 500
 
 
@@ -274,6 +304,7 @@ def send_message():
         user_group_file = (
             db.session.query(UserGroupFile)
             .filter_by(user_id=user_id, user_group_id=group_id)
+            .order_by(UserGroupFile.id.desc())
             .first()
         )
         if not user_group_file:
@@ -282,6 +313,30 @@ def send_message():
         participant_id = participant.get("id") if participant else None
         participant_name = participant.get("name") if participant else "AI"
 
+        if participant_id:
+            # Validate participant exists in group
+            participant = (
+                db.session.query(Participant)
+                .filter_by(id=participant_id, group_id=group_id, user_id=user_id)
+                .first()
+            )
+
+            if not participant:
+                return jsonify({"msg": "Invalid participant"}), 422
+
+            # Validate participant has an uploaded file
+            participant_file = (
+                db.session.query(ParticipantFile)
+                .filter_by(participant_id=participant_id)
+                .order_by(ParticipantFile.id.desc())
+                .first()
+            )
+            if not participant_file:
+                return jsonify({"msg": "No file uploaded for this participant"}), 403
+
+            participant_processed_summary = participant_file.processed_summary
+        else:
+            participant_processed_summary = None
         # Save user's message
         new_user_message = Message(
             user_id=user_id,
@@ -296,7 +351,13 @@ def send_message():
         # Generate assistant's response based on the group-specific prompt
         processed_summary = user_group_file.processed_summary
         history = get_history(group_id, user_id, participant_id, limit=10)
-        response_content = predict(history, group_id, processed_summary, db.session)
+        response_content = predict(
+            history,
+            group_id,
+            processed_summary,
+            db.session,
+            participant_processed_summary,
+        )
 
         new_participant_message = Message(
             user_id=user_id,
@@ -327,7 +388,7 @@ def send_message():
 
         return jsonify({"response": True, "messages": response_messages})
     except Exception as e:
-        print(f"Error in send_message: {str(e)}")
+        logging.error(f"Error in send_message: {str(e)}")
         return str(e), 500
 
 
@@ -443,21 +504,23 @@ def upload_group_file():
     user_id = get_jwt_identity()
     user_group_id = request.form.get("user_group_id", type=int)
 
-    # Check if the user group exists for this user
     user_group = (
         db.session.query(UserGroup)
         .filter_by(user_id=user_id, group_id=user_group_id)
         .first()
     )
     if not user_group:
+        logging.warning(f"User group not found or unauthorized: {user_group_id}")
         return jsonify({"msg": "User group not found or unauthorized"}), 404
 
     if "file" not in request.files:
+        logging.warning(f"No file provided for user group: {user_group_id}")
         return jsonify({"msg": "No file provided"}), 400
 
     file = request.files["file"]
 
     if file.filename == "" or not file.filename.endswith(".pdf"):
+        logging.warning(f"Invalid file type provided for user group: {user_group_id}")
         return jsonify({"msg": "Invalid file type; only PDFs allowed"}), 400
 
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id))
@@ -468,9 +531,6 @@ def upload_group_file():
             file, user_folder, user_group.group_id, db.session
         )
 
-        # TODO: add a check to see if the file is DISC
-
-        # Save file metadata
         new_user_group_file = UserGroupFile(
             user_group_id=user_group.group_id,
             user_id=user_id,
@@ -480,6 +540,7 @@ def upload_group_file():
         db.session.add(new_user_group_file)
         db.session.commit()
 
+        logging.info(f"File uploaded successfully for user group: {user_group_id}")
         return (
             jsonify(
                 {"msg": "File uploaded successfully", "filename": original_filename}
@@ -488,7 +549,7 @@ def upload_group_file():
         )
 
     except Exception as e:
-        print(f"Error processing PDF: {e}")
+        logging.error(f"Error processing PDF for user group {user_group_id}: {e}")
         return jsonify({"msg": "Failed to process PDF", "error": str(e)}), 500
 
 
@@ -582,7 +643,7 @@ def upload_participant_file():
         )
 
     except Exception as e:
-        print(f"Error processing PDF: {e}")
+        logging.error(f"Error processing PDF: {e}")
         return jsonify({"msg": "Failed to process PDF", "error": str(e)}), 500
 
 
