@@ -27,6 +27,8 @@ six = "^1.16.0"
 flask-admin = "^1.6.1"
 flask-basicauth = "^0.2.0"
 click = "^8.1.7"
+psycopg2-binary = "^2.9.10"
+boto3 = "^1.35.57"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.1"

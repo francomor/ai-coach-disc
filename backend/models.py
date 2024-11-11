@@ -14,6 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.schema import ForeignKeyConstraint
 
 load_dotenv()
 
@@ -136,10 +137,19 @@ class Participant(Base):
 class UserGroupFile(Base):
     __tablename__ = "UserGroupFiles"
     id = Column(Integer, primary_key=True)
-    user_group_id = Column(Integer, ForeignKey("UserGroups.group_id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    user_group_id = Column(
+        Integer, nullable=False
+    )  # This corresponds to group_id in UserGroups
     file_storage_id = Column(Integer, ForeignKey("FileStorage.id"), nullable=False)
     processed_summary = Column(Text, nullable=True)
+
+    # Define the composite foreign key constraint
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["user_id", "user_group_id"], ["UserGroups.user_id", "UserGroups.group_id"]
+        ),
+    )
 
     # Relationships
     user_group = relationship("UserGroup", back_populates="files")

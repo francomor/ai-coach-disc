@@ -63,11 +63,12 @@ Commands:
 ```bash
 sudo yum update -y
 sudo yum -y install python-pip
+sudo yum install poppler-utils
 pip install gunicorn
 cd backend
 pip install -r requirements.txt
 cd ..
-gunicorn -b 0.0.0.0:8000 backend.app:app
+gunicorn -b 0.0.0.0:8000 backend.app:app --timeout 260
 ```
 
 Tmux:

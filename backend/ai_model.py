@@ -6,9 +6,10 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+import boto3
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from pdf2image import convert_from_path
+from pdf2image import convert_from_bytes
 from sqlalchemy.orm import Session
 from werkzeug.datastructures import file_storage
 from werkzeug.utils import secure_filename
@@ -103,14 +104,14 @@ def process_pdf(
         model_name="gpt-4o-mini",
         temperature=0,
         max_retries=2,
-        timeout=30,
+        timeout=60,
         api_key=str(prompt_config.api_key),
     )
     summary_model = ChatOpenAI(
         model_name="gpt-4-turbo",
         temperature=0.7,
         max_retries=2,
-        timeout=30,
+        timeout=60,
         api_key=str(prompt_config.api_key),
     )
 
@@ -119,7 +120,8 @@ def process_pdf(
     )
 
     # Convert PDF pages to images
-    pages = convert_from_path(file_path, fmt="png")
+    file.seek(0)
+    pages = convert_from_bytes(file.read(), fmt="png")
     responses = []
 
     for i, page in enumerate(pages):
@@ -141,25 +143,40 @@ def process_pdf(
     logging.info("Getting summary response...")
     summary = call_summary_model(
         summary_model, str(prompt_config.prompt_summary_pdf), "\n".join(responses)
-    ).content
+    )
 
-    return original_filename, new_file_storage, summary
+    return original_filename, new_file_storage, summary.content
 
 
 def save_file(
     file: file_storage.FileStorage, upload_folder: str, session: Session
 ) -> Tuple[str, FileStorage, str]:
-    """Save a file to the server and database."""
+    """Save a file to S3 if in production or locally otherwise, and store details in the database."""
     original_filename = secure_filename(file.filename)
     file_uuid = uuid.uuid4().hex
     file_path = os.path.join(upload_folder, f"{file_uuid}.pdf")
-    file.save(file_path)
+
+    # Save to local if environment is not 'prod'
+    environment = os.getenv("ENVIRONMENT", "dev")
+    if environment == "prod":
+        s3_client = boto3.client("s3")
+        s3_bucket = os.getenv("S3_BUCKET_NAME")
+        encoded_data = io.BytesIO(file.read())
+        encoded_data.seek(0)
+        s3_client.upload_fileobj(encoded_data, s3_bucket, file_path)
+        logging.info(f"Uploaded {original_filename} to S3 bucket {s3_bucket}")
+        file_url = f"s3://{s3_bucket}/{file_path}"
+    else:
+        # Save locally for non-prod environments
+        file.save(file_path)
+        file_url = file_path
+
     new_file_storage = FileStorage(
-        file_name=original_filename, file_url=file_path, uploaded_at=datetime.utcnow()
+        file_name=original_filename, file_url=file_url, uploaded_at=datetime.utcnow()
     )
     session.add(new_file_storage)
     session.commit()
-    return original_filename, new_file_storage, file_path
+    return original_filename, new_file_storage, file_url
 
 
 def call_gpt_vision(vision_model: ChatOpenAI, prompt: str, content: str) -> BaseMessage:
