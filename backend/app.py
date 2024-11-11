@@ -503,7 +503,7 @@ def complete_onboarding():
 
 @app.route("/group/upload-file", methods=["POST"])
 @jwt_required()
-def upload_group_file():
+async def upload_group_file():
     user_id = get_jwt_identity()
     user_group_id = request.form.get("user_group_id", type=int)
 
@@ -529,29 +529,31 @@ def upload_group_file():
     user_folder = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id))
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
-    # try:
-    original_filename, new_file_storage, summary = process_pdf(
-        file, user_folder, user_group.group_id, db.session
-    )
+    try:
+        original_filename, new_file_storage, summary = await process_pdf(
+            file, user_folder, user_group.group_id, db.session
+        )
 
-    new_user_group_file = UserGroupFile(
-        user_group_id=user_group.group_id,
-        user_id=user_id,
-        file_storage_id=new_file_storage.id,
-        processed_summary=summary,
-    )
-    db.session.add(new_user_group_file)
-    db.session.commit()
+        new_user_group_file = UserGroupFile(
+            user_group_id=user_group.group_id,
+            user_id=user_id,
+            file_storage_id=new_file_storage.id,
+            processed_summary=summary,
+        )
+        db.session.add(new_user_group_file)
+        db.session.commit()
 
-    logging.info(f"File uploaded successfully for user group: {user_group_id}")
-    return (
-        jsonify({"msg": "File uploaded successfully", "filename": original_filename}),
-        200,
-    )
-    #
-    # except Exception as e:
-    #     logging.error(f"Error processing PDF for user group {user_group_id}: {e}")
-    #     return jsonify({"msg": "Failed to process PDF", "error": str(e)}), 500
+        logging.info(f"File uploaded successfully for user group: {user_group_id}")
+        return (
+            jsonify(
+                {"msg": "File uploaded successfully", "filename": original_filename}
+            ),
+            200,
+        )
+
+    except Exception as e:
+        logging.error(f"Error processing PDF for user group {user_group_id}: {e}")
+        return jsonify({"msg": "Failed to process PDF", "error": str(e)}), 500
 
 
 @app.route("/group/file-history", methods=["GET"])
@@ -596,7 +598,7 @@ def file_history():
 
 @app.route("/participants/upload-file", methods=["POST"])
 @jwt_required()
-def upload_participant_file():
+async def upload_participant_file():
     user_id = get_jwt_identity()
     participant_id = request.form.get("participant_id", type=int)
 
@@ -622,7 +624,7 @@ def upload_participant_file():
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     try:
-        original_filename, new_file_storage, summary = process_pdf(
+        original_filename, new_file_storage, summary = await process_pdf(
             file, user_folder, participant.group_id, db.session
         )
 

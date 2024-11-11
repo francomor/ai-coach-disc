@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import io
 import logging
@@ -10,6 +11,7 @@ import boto3
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pdf2image import convert_from_bytes
+from PIL import Image
 from sqlalchemy.orm import Session
 from werkzeug.datastructures import file_storage
 from werkzeug.utils import secure_filename
@@ -90,7 +92,7 @@ def make_completion(chat_model: ChatOpenAI, messages: List[dict], context: str) 
     return response.content
 
 
-def process_pdf(
+async def process_pdf(
     file: file_storage.FileStorage, upload_folder: str, group_id: int, session: Session
 ) -> Tuple[str, FileStorage, str]:
     """Process a PDF file by converting each page to an image and generating summaries."""
@@ -122,26 +124,17 @@ def process_pdf(
     # Convert PDF pages to images
     file.seek(0)
     pages = convert_from_bytes(file.read(), fmt="png")
-    responses = []
-
-    for i, page in enumerate(pages):
-        logging.info(f"Processing page {i + 1} of {len(pages)}")
-
-        # Convert each page to a base64-encoded image string
-        buffer = io.BytesIO()
-        page.save(buffer, format="png")
-        content = base64.b64encode(buffer.getbuffer().tobytes()).decode("utf-8")
-
-        # Generate completion for each image page
-        response = call_gpt_vision(
-            vision_model, str(prompt_config.prompt_gpt_vision), content
-        )
-        responses.append(response.content)
-        buffer.close()
+    logging.info(f"Converted {len(pages)} pages to images")
+    responses = await asyncio.gather(
+        *[
+            process_pdf_page(vision_model, str(prompt_config.prompt_gpt_vision), page)
+            for page in pages
+        ]
+    )
 
     # Combine responses into a summary
     logging.info("Getting summary response...")
-    summary = call_summary_model(
+    summary = await call_summary_model(
         summary_model, str(prompt_config.prompt_summary_pdf), "\n".join(responses)
     )
 
@@ -179,8 +172,23 @@ def save_file(
     return original_filename, new_file_storage, file_url
 
 
-def call_gpt_vision(vision_model: ChatOpenAI, prompt: str, content: str) -> BaseMessage:
-    return vision_model.invoke(
+async def process_pdf_page(vision_model: ChatOpenAI, prompt: str, page: Image) -> str:
+    """Process a single PDF page asynchronously."""
+    # Convert page to a base64-encoded image string
+    buffer = io.BytesIO()
+    page.save(buffer, format="png")
+    content = base64.b64encode(buffer.getbuffer().tobytes()).decode("utf-8")
+    buffer.close()
+
+    # Generate completion for the image page
+    response = await call_gpt_vision_async(vision_model, prompt, content)
+    return response.content
+
+
+async def call_gpt_vision_async(
+    vision_model: ChatOpenAI, prompt: str, content: str
+) -> BaseMessage:
+    return await vision_model.ainvoke(
         [
             HumanMessage(
                 content=[
@@ -195,10 +203,10 @@ def call_gpt_vision(vision_model: ChatOpenAI, prompt: str, content: str) -> Base
     )
 
 
-def call_summary_model(
+async def call_summary_model(
     summary_model: ChatOpenAI, prompt: str, content: str
 ) -> BaseMessage:
-    return summary_model.invoke(
+    return await summary_model.ainvoke(
         [
             HumanMessage(
                 content=[
