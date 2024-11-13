@@ -103,14 +103,14 @@ async def process_pdf(
         raise ValueError("Prompt configuration not found for the specified group.")
 
     vision_model = ChatOpenAI(
-        model_name="gpt-4o-mini",
+        model_name="gpt-4o",
         temperature=0,
         max_retries=2,
         timeout=60,
         api_key=str(prompt_config.api_key),
     )
     summary_model = ChatOpenAI(
-        model_name="gpt-4-turbo",
+        model_name="gpt-4o",
         temperature=0.7,
         max_retries=2,
         timeout=60,
@@ -199,7 +199,8 @@ async def call_gpt_vision_async(
                     },
                 ]
             )
-        ]
+        ],
+        response_format={"type": "json_object"},
     )
 
 
