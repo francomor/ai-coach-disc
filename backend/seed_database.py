@@ -109,22 +109,17 @@ participants_data = [
 questions_data = [
     {
         "id": 1,
-        "text": "¿Cuál es tu rol actual y cuáles son tus funciones y responsabilidades principales?",
+        "text": "¿Qué en tipo de empresa trabajás y a que sector pertenece?",
     },
     {
         "id": 2,
-        "text": "¿Cuáles son los principales desafíos/problematicas que enfrentas en tu día a día laboral?",
+        "text": "¿Cuál es tu rol/es actual/es y cuáles son tus principales responsabilidades?",
     },
-    {"id": 3, "text": "¿Tienes metas específicas a corto y mediano plazo?"},
+    {"id": 3, "text": "¿Qué problemáticas y desafíos estás enfrentando actualmente?"},
     {
         "id": 4,
-        "text": "¿En qué tipo de empresa trabajas y a qué sector pertenece (e.g., tecnología, servicios, manufactura)?",
+        "text": "¿Qué metas profesionales te gustaría alcanzar en el corto y largo plazo?",
     },
-    {
-        "id": 5,
-        "text": "¿Que edad tenés, cuántos años llevas en tu cargo actual y en la empresa?",
-    },
-    {"id": 6, "text": "¿Tienes personas a tu cargo o gestionas equipos?"},
 ]
 
 # Answers data for test1

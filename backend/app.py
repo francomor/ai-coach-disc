@@ -717,7 +717,9 @@ def add_participant():
 
     # Count the current number of participants in the group
     participant_count = (
-        db.session.query(Participant).filter_by(group_id=group_id).count()
+        db.session.query(Participant)
+        .filter_by(group_id=group_id, user_id=user_id)
+        .count()
     )
 
     if participant_count >= 5:
@@ -765,7 +767,11 @@ def get_participants(group_id):
         return jsonify({"msg": "Group not found or unauthorized"}), 403
 
     # Retrieve participants
-    participants = db.session.query(Participant).filter_by(group_id=group_id).all()
+    participants = (
+        db.session.query(Participant)
+        .filter_by(group_id=group_id, user_id=user_id)
+        .all()
+    )
     participants_data = [{"id": p.id, "name": p.name} for p in participants]
 
     return jsonify({"participants": participants_data})
