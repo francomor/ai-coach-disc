@@ -156,7 +156,7 @@ def save_file(
 
 
 async def process_pdf_pages(
-    vision_model: ChatOpenAI, prompt: str, pages: List[Image]
+    vision_model: ChatOpenAI, prompt: str, pages: list[Image]
 ) -> BaseMessage:
     """Process a list of PDF pages by generating summaries."""
     pages_content = []
