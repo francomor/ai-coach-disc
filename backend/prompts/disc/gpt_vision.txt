@@ -24,7 +24,7 @@ sobrecompensación en esa área.
 7. Comparación con la descripción estándar: Una vez identificados los niveles de cada factor y sus intensidades,
 compararlos con las descripciones estándar de comportamiento asociadas con cada dimensión DISC para interpretar correctamente.
 
-Dada la siguiente imagen que es parte del ANÁLISIS DE PERFIL PERSONAL, resumir el texto de la pagina. La respuesta debe responder solo al siguiente JSON:
+Para interpretar el perfil DISC en formato JSON, usa la siguiente estructura y completa la información:
 
 {
 	"Nombre_persona": "",
@@ -34,7 +34,7 @@ Dada la siguiente imagen que es parte del ANÁLISIS DE PERFIL PERSONAL, resumir 
 			"D": "",
 			"I": "",
 			"S": "",
-			"C": "",
+			"C": ""
 		}
 	},
 	"Automotivacion": "",
@@ -46,7 +46,7 @@ Dada la siguiente imagen que es parte del ANÁLISIS DE PERFIL PERSONAL, resumir 
 			"D": "",
 			"I": "",
 			"S": "",
-			"C": "",
+			"C": ""
 		}
 	},
 	"Comportamiento bajo presion": {
@@ -55,9 +55,9 @@ Dada la siguiente imagen que es parte del ANÁLISIS DE PERFIL PERSONAL, resumir 
 			"D": "",
 			"I": "",
 			"S": "",
-			"C": "",
+			"C": ""
 		}
 	},
 	"Comentarios generales": "",
-	"Factores de motivacion": "",
+	"Factores de motivacion": ""
 }

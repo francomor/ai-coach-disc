@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import io
 import logging
@@ -109,13 +108,6 @@ async def process_pdf(
         timeout=60,
         api_key=str(prompt_config.api_key),
     )
-    summary_model = ChatOpenAI(
-        model_name="gpt-4o",
-        temperature=0.7,
-        max_retries=2,
-        timeout=60,
-        api_key=str(prompt_config.api_key),
-    )
 
     original_filename, new_file_storage, file_path = save_file(
         file, upload_folder, session
@@ -125,17 +117,8 @@ async def process_pdf(
     file.seek(0)
     pages = convert_from_bytes(file.read(), fmt="png")
     logging.info(f"Converted {len(pages)} pages to images")
-    responses = await asyncio.gather(
-        *[
-            process_pdf_page(vision_model, str(prompt_config.prompt_gpt_vision), page)
-            for page in pages
-        ]
-    )
-
-    # Combine responses into a summary
-    logging.info("Getting summary response...")
-    summary = await call_summary_model(
-        summary_model, str(prompt_config.prompt_summary_pdf), "\n".join(responses)
+    summary = await process_pdf_pages(
+        vision_model, str(prompt_config.prompt_gpt_vision), pages
     )
 
     return original_filename, new_file_storage, summary.content
@@ -172,47 +155,37 @@ def save_file(
     return original_filename, new_file_storage, file_url
 
 
-async def process_pdf_page(vision_model: ChatOpenAI, prompt: str, page: Image) -> str:
-    """Process a single PDF page asynchronously."""
-    # Convert page to a base64-encoded image string
-    buffer = io.BytesIO()
-    page.save(buffer, format="png")
-    content = base64.b64encode(buffer.getbuffer().tobytes()).decode("utf-8")
-    buffer.close()
+async def process_pdf_pages(
+    vision_model: ChatOpenAI, prompt: str, pages: List[Image]
+) -> BaseMessage:
+    """Process a list of PDF pages by generating summaries."""
+    pages_content = []
+    for page in pages:
+        # Convert page to a base64-encoded image string
+        buffer = io.BytesIO()
+        page.save(buffer, format="png")
+        content = base64.b64encode(buffer.getbuffer().tobytes()).decode("utf-8")
+        buffer.close()
+        pages_content.append(content)
 
-    # Generate completion for the image page
-    response = await call_gpt_vision_async(vision_model, prompt, content)
-    return response.content
+    # Generate completion for the image pages
+    response = await call_gpt_vision_async(vision_model, prompt, pages_content)
+    return response
 
 
 async def call_gpt_vision_async(
-    vision_model: ChatOpenAI, prompt: str, content: str
+    vision_model: ChatOpenAI, prompt: str, pages_content: List[str]
 ) -> BaseMessage:
     return await vision_model.ainvoke(
         [
             HumanMessage(
-                content=[
-                    {"type": "text", "text": prompt},
+                content=[{"type": "text", "text": prompt}]
+                + [
                     {
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{content}"},
-                    },
-                ]
-            )
-        ],
-        response_format={"type": "json_object"},
-    )
-
-
-async def call_summary_model(
-    summary_model: ChatOpenAI, prompt: str, content: str
-) -> BaseMessage:
-    return await summary_model.ainvoke(
-        [
-            HumanMessage(
-                content=[
-                    {"type": "text", "text": prompt},
-                    {"type": "text", "text": content},
+                    }
+                    for content in pages_content
                 ]
             )
         ],
