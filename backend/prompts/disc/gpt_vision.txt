@@ -51,7 +51,7 @@ Para interpretar el perfil DISC en formato JSON, usa la siguiente estructura y c
 	},
 	"Comportamiento bajo presion": {
 		"Descripcion": "",
-		"Grafica I": {
+		"Grafica II": {
 			"D": "",
 			"I": "",
 			"S": "",
