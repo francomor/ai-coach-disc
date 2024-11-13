@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import useToken from "./utils/useToken";
 import Login from "./components/Login/Login";
@@ -86,52 +86,50 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login setToken={setToken} />} />
+    <Routes>
+      <Route path="/login" element={<Login setToken={setToken} />} />
 
-        {token && userData && !isOnboardingComplete ? (
-          <Route
-            path="/"
-            element={
-              <Onboarding
-                onComplete={handleOnboardingComplete}
-                accessToken={token}
-                user={userData}
-                token={tokenData}
-                groups={groups}
-              />
-            }
-          />
-        ) : token && userData && groups.length > 0 ? (
-          <>
-            <Route path="/" element={<ChatSelection user={userData} token={tokenData} groups={groups} />} />
-            {groups.map((group) => (
-              <Route
-                key={group.id}
-                path={`/chat/group/${group.urlSlug}`}
-                element={
-                  <ChatProvider>
-                    <ChatApp
-                      user={userData}
-                      token={tokenData}
-                      participants={group.participants}
-                      groupName={group.name}
-                      groupId={group.id}
-                      groups={groups}
-                    />
-                  </ChatProvider>
-                }
-              />
-            ))}
-          </>
-        ) : (
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        )}
+      {token && userData && !isOnboardingComplete ? (
+        <Route
+          path="/"
+          element={
+            <Onboarding
+              onComplete={handleOnboardingComplete}
+              accessToken={token}
+              user={userData}
+              token={tokenData}
+              groups={groups}
+            />
+          }
+        />
+      ) : token && userData && groups.length > 0 ? (
+        <>
+          <Route path="/" element={<ChatSelection user={userData} token={tokenData} groups={groups} />} />
+          {groups.map((group) => (
+            <Route
+              key={group.id}
+              path={`/chat/group/${group.urlSlug}`}
+              element={
+                <ChatProvider>
+                  <ChatApp
+                    user={userData}
+                    token={tokenData}
+                    participants={group.participants}
+                    groupName={group.name}
+                    groupId={group.id}
+                    groups={groups}
+                  />
+                </ChatProvider>
+              }
+            />
+          ))}
+        </>
+      ) : (
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      )}
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
