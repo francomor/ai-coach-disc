@@ -50,7 +50,7 @@ def get_chat_model(group_id: int, api_key: str) -> ChatOpenAI:
     """Retrieve a chat model for a specific group."""
     if group_id not in chat_models:
         chat_models[group_id] = ChatOpenAI(
-            model_name="gpt-4-turbo",
+            model_name="gpt-4",
             temperature=0.7,
             max_retries=2,
             timeout=30,

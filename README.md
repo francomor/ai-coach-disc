@@ -1,5 +1,5 @@
-# AI Persona
-AI Persona is a multi-purpose AI chatbot platform designed to enhance user interactions. The project consists of a Flask-based backend and a React frontend.
+# AI coach DISC
+AI coach DISC is a web application that helps users to understand their personality type and improve their communication skills. The application is based on the DISC model, which is a behavior assessment tool based on the work of psychologist William Moulton Marston. The DISC model classifies four personality types: Dominance, Influence, Steadiness, and Conscientiousness.
 
 ## Prerequisites
 * Python 3.6 or higher
@@ -51,15 +51,8 @@ Run:
 poetry export --without-hashes -o backend/requirements.txt
 ```
 
-Copy with FileZilla all files to EC2 instance
+Copy with FileZilla all files to EC2 instance nd run the following commands:
 
-SSH:
-
-```bash
-ssh -i ai-coach-thomas.pem ec2-user@18.231.195.47
-```
-
-Commands:
 ```bash
 sudo yum update -y
 sudo yum -y install python-pip
